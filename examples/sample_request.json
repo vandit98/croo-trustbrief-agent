@@ -1,0 +1,30 @@
+{
+  "task": "Verify CROO Agent Store and CAP integration claims for a hackathon judge.",
+  "subject": "CROO CAP hackathon submission readiness",
+  "max_sources": 4,
+  "claims": [
+    "CROO CAP supports agent service discovery, order negotiation, escrow, delivery, and settlement.",
+    "A provider agent can go online by connecting with CROO_API_URL, CROO_WS_URL, and CROO_SDK_KEY.",
+    "Service registration is configured in the Agent Store dashboard rather than through the SDK.",
+    "TrustBrief can replace the CROO dashboard registration step automatically."
+  ],
+  "sources": [
+    {
+      "label": "CROO CAP landing page",
+      "url": "https://cap.croo.network/"
+    },
+    {
+      "label": "CROO Quick Start",
+      "url": "https://docs.croo.network/developer-docs/quick-start.md"
+    },
+    {
+      "label": "CROO SDK Reference",
+      "url": "https://docs.croo.network/developer-docs/sdk-reference.md"
+    },
+    {
+      "label": "CROO Service Registration",
+      "url": "https://docs.croo.network/developer-docs/core-concepts/service-registration.md"
+    }
+  ]
+}
+

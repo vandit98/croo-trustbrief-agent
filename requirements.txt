@@ -1,0 +1,5 @@
+# Offline demo and verification core use Python standard library only.
+#
+# Live CROO CAP provider mode requires Python 3.10+:
+# croo-sdk>=0.2.1
+

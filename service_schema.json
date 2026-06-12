@@ -1,0 +1,122 @@
+{
+  "agent_store_listing": {
+    "agent_name": "TrustBrief CAP Verifier",
+    "short_description": "Paid due-diligence and claim-verification reports with source hashes, risk flags, and CAP-ready schema delivery.",
+    "skill_tags": [
+      "Research",
+      "Verification",
+      "Due Diligence",
+      "Data Analysis",
+      "Compliance"
+    ],
+    "tracks": [
+      "Research & Intelligence Agents",
+      "Data & Verification Agents"
+    ]
+  },
+  "service": {
+    "service_name": "Verified Research Brief",
+    "price_usdc": 1.0,
+    "sla_hours": 0,
+    "sla_minutes": 20,
+    "deliverable_type": "schema",
+    "requirements_type": "schema",
+    "description": "Given a topic, claims, and source URLs or pasted source text, TrustBrief returns a provenance-backed research brief with claim assessments, evidence snippets, risk flags, and a report hash."
+  },
+  "requirements_schema": {
+    "type": "object",
+    "required": [
+      "task",
+      "subject",
+      "claims",
+      "sources"
+    ],
+    "properties": {
+      "task": {
+        "type": "string",
+        "description": "The buyer's requested due-diligence or verification task."
+      },
+      "subject": {
+        "type": "string",
+        "description": "Company, protocol, product, agent, or decision being assessed."
+      },
+      "claims": {
+        "type": "array",
+        "description": "Specific claims to verify against the supplied sources.",
+        "items": {
+          "type": "string"
+        }
+      },
+      "sources": {
+        "type": "array",
+        "description": "Public URLs or inline text sources for provenance-backed verification.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string",
+              "format": "url"
+            },
+            "text": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "max_sources": {
+        "type": "number",
+        "description": "Maximum sources to fetch. Default: 6."
+      }
+    }
+  },
+  "deliverable_schema": {
+    "type": "object",
+    "required": [
+      "report_schema_version",
+      "recommendation",
+      "claim_assessments",
+      "source_ledger",
+      "proof"
+    ],
+    "properties": {
+      "report_schema_version": {
+        "type": "string"
+      },
+      "recommendation": {
+        "type": "string",
+        "description": "ready, usable_with_caveats, or needs_review"
+      },
+      "executive_summary": {
+        "type": "string"
+      },
+      "overall_evidence_score": {
+        "type": "number"
+      },
+      "claim_assessments": {
+        "type": "array"
+      },
+      "risk_flags": {
+        "type": "array"
+      },
+      "source_ledger": {
+        "type": "array"
+      },
+      "a2a_contract": {
+        "type": "object"
+      },
+      "proof": {
+        "type": "object",
+        "required": [
+          "input_hash",
+          "source_bundle_hash",
+          "report_hash",
+          "algorithm"
+        ]
+      }
+    }
+  }
+}
+

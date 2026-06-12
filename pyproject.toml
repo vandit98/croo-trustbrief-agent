@@ -1,0 +1,16 @@
+[project]
+name = "croo-trustbrief-agent"
+version = "0.1.0"
+description = "CAP-callable verified research and claim provenance agent for the CROO AI Agent Hackathon."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [{ name = "TrustBrief Builders" }]
+dependencies = []
+
+[project.optional-dependencies]
+cap = ["croo-sdk>=0.2.1; python_version >= '3.10'"]
+
+[tool.setuptools.packages.find]
+include = ["trustbrief_agent*"]
+
