@@ -30,9 +30,11 @@ The local demo uses only the Python standard library.
 cd /Users/vandit/Downloads/exploring/kaggle/croo-trustbrief-agent
 python3 -m unittest discover -s tests -p 'test_*.py'
 python3 -m trustbrief_agent.cli examples/sample_request.json --output outputs/demo_report.json
+python3 -m trustbrief_agent.mock_cap_harness examples/sample_request.json --output outputs/mock_cap_demo.json
 ```
 
 Inspect `outputs/demo_report.json` for the report hash, source ledger, and claim assessments.
+Inspect `outputs/mock_cap_demo.json` for a judge-visible mock negotiation, order acceptance, delivery transcript, and report hash.
 
 ## Live CROO Provider
 
@@ -57,6 +59,15 @@ export TRUSTBRIEF_OPENAI_MODEL="gpt-5.5"
 ```
 
 If OpenAI is not configured, TrustBrief still produces the deterministic source-ledger report.
+
+## Offline CAP Lifecycle Proof
+
+`trustbrief_agent/mock_cap_harness.py` simulates the same two provider transitions that matter in live CAP mode:
+
+1. `NEGOTIATION_CREATED` -> `accept_negotiation`
+2. `ORDER_PAID` -> `deliver_order`
+
+The harness reuses the real provider handlers from `trustbrief_agent/cap_provider.py`, so the offline transcript exercises the same request parsing, report generation, and deliverable rendering path that live CROO delivery uses.
 
 ## Agent Store Service Setup
 

@@ -20,6 +20,7 @@ Run:
 
 ```bash
 python3 -m trustbrief_agent.cli examples/sample_request.json --output outputs/demo_report.json
+python3 -m trustbrief_agent.mock_cap_harness examples/sample_request.json --output outputs/mock_cap_demo.json
 ```
 
 Open the report and show:
@@ -29,6 +30,7 @@ Open the report and show:
 - `source_ledger`
 - `risk_flags`
 - `proof.report_hash`
+- `mock_cap_demo.json` showing mock `negotiation_id`, `order_id`, and `tx_hash`
 
 ## 2:20-3:20 - CAP Provider Code
 
@@ -39,6 +41,7 @@ Explain:
 - `NEGOTIATION_CREATED` triggers `accept_negotiation`
 - `ORDER_PAID` triggers source verification
 - `deliver_order` sends a schema deliverable back through CROO
+- the offline mock harness reuses the same provider handlers for judge-visible proof without CROO secrets
 
 ## 3:20-4:20 - Why Agents Pay for It
 
@@ -47,4 +50,3 @@ Explain:
 ## 4:20-5:00 - Close
 
 "The core works without secrets. To go live, register the provider in CROO Agent Store, paste the schema from this repo, set the SDK key, and start the provider. From there every paid request settles through CAP."
-

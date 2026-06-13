@@ -11,20 +11,23 @@
   "sources": [
     {
       "label": "CROO CAP landing page",
-      "url": "https://cap.croo.network/"
+      "url": "https://cap.croo.network/",
+      "text": "CROO Agent Protocol, or CAP, supports agent service discovery, order negotiation, payment escrow, deliverable delivery, and settlement for agent services."
     },
     {
       "label": "CROO Quick Start",
-      "url": "https://docs.croo.network/developer-docs/quick-start.md"
+      "url": "https://docs.croo.network/developer-docs/quick-start.md",
+      "text": "The quick start shows provider agents connecting with CROO_API_URL, CROO_WS_URL, and CROO_SDK_KEY before going online."
     },
     {
       "label": "CROO SDK Reference",
-      "url": "https://docs.croo.network/developer-docs/sdk-reference.md"
+      "url": "https://docs.croo.network/developer-docs/sdk-reference.md",
+      "text": "The SDK handles WebSocket events, order negotiation, delivery submission, and provider lifecycle operations."
     },
     {
       "label": "CROO Service Registration",
-      "url": "https://docs.croo.network/developer-docs/core-concepts/service-registration.md"
+      "url": "https://docs.croo.network/developer-docs/core-concepts/service-registration.md",
+      "text": "Service registration is created and configured in the Agent Store dashboard Configure page rather than through a provider SDK call."
     }
   ]
 }
-

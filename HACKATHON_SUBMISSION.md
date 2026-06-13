@@ -29,6 +29,7 @@ TrustBrief is a CAP-callable provider agent. A requester submits a topic, claims
 - Provider delivers the report with `deliver_order`.
 - Deliverable can be `schema` or `text` through `TRUSTBRIEF_DELIVERABLE_MODE`.
 - Agent Store service configuration is captured in `service_schema.json`.
+- Offline lifecycle proof is captured by `trustbrief_agent/mock_cap_harness.py`, which replays accept-and-deliver flow without CROO secrets.
 
 ## Repository
 
@@ -43,10 +44,11 @@ License: MIT.
 
    ```bash
    python3 -m trustbrief_agent.cli examples/sample_request.json --output outputs/demo_report.json
+   python3 -m trustbrief_agent.mock_cap_harness examples/sample_request.json --output outputs/mock_cap_demo.json
    ```
 
-3. Open `outputs/demo_report.json`.
-4. Point to `claim_assessments`, `source_ledger`, `risk_flags`, and `proof.report_hash`.
+3. Open `outputs/demo_report.json` and `outputs/mock_cap_demo.json`.
+4. Point to `claim_assessments`, `source_ledger`, `risk_flags`, `proof.report_hash`, and the mock `negotiation_id` -> `order_id` -> `tx_hash` lifecycle.
 5. Show `trustbrief_agent/cap_provider.py` handling CROO negotiation and paid delivery.
 6. Once dashboard credentials exist, start live provider:
 
@@ -62,7 +64,7 @@ License: MIT.
 | Requirement | Status | Evidence |
 | --- | --- | --- |
 | Listed on CROO Agent Store | Blocked by dashboard login/API key | Use `service_schema.json` |
-| Integrated with CAP | Code ready | `trustbrief_agent/cap_provider.py` |
+| Integrated with CAP | Code + offline lifecycle proof ready | `trustbrief_agent/cap_provider.py`, `trustbrief_agent/mock_cap_harness.py` |
 | Open source permissive license | Ready | `LICENSE` |
 | Demo + README | Ready | `README.md`, `DEMO_SCRIPT.md` |
 | BUIDL filed on DoraHacks | Blocked by DoraHacks human verification/login | This file contains submission copy |

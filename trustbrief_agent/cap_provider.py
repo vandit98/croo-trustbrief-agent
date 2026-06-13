@@ -5,7 +5,7 @@ import json
 import logging
 import os
 import signal
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Type
 
 from .core import analyze_request
 
@@ -23,6 +23,50 @@ def _parse_requirements(raw: str) -> Dict[str, Any]:
         return {"task": "Verify requester payload.", "claims": [str(decoded)], "sources": []}
     except json.JSONDecodeError:
         return {"task": raw, "subject": raw[:160], "claims": [], "sources": []}
+
+
+def build_delivery_request(
+    report: Dict[str, Any],
+    deliver_mode: str,
+    deliver_order_request_cls: Type[Any],
+    deliverable_type: Any,
+) -> Any:
+    rendered = json.dumps(report, sort_keys=True)
+    if deliver_mode == "text":
+        return deliver_order_request_cls(
+            deliverable_type=deliverable_type.TEXT,
+            deliverable_text=json.dumps(report, indent=2, sort_keys=True),
+        )
+    return deliver_order_request_cls(
+        deliverable_type=deliverable_type.SCHEMA,
+        deliverable_schema=rendered,
+    )
+
+
+async def handle_negotiation_created(client: Any, event: Any, auto_accept: bool = True) -> Optional[Any]:
+    if not auto_accept:
+        LOG.info("negotiation received but auto-accept disabled negotiation_id=%s", event.negotiation_id)
+        return None
+    result = await client.accept_negotiation(event.negotiation_id)
+    LOG.info("accepted negotiation_id=%s order_id=%s", event.negotiation_id, result.order.order_id)
+    return result
+
+
+async def handle_order_paid(
+    client: Any,
+    event: Any,
+    deliver_mode: str,
+    use_openai: bool,
+    deliver_order_request_cls: Type[Any],
+    deliverable_type: Any,
+) -> Dict[str, Any]:
+    order = await client.get_order(event.order_id)
+    negotiation = await client.get_negotiation(order.negotiation_id)
+    report = analyze_request(_parse_requirements(negotiation.requirements), use_openai=use_openai)
+    request = build_delivery_request(report, deliver_mode, deliver_order_request_cls, deliverable_type)
+    result = await client.deliver_order(event.order_id, request)
+    LOG.info("delivered order_id=%s tx_hash=%s report_hash=%s", event.order_id, result.tx_hash, report["proof"]["report_hash"])
+    return {"result": result, "report": report, "request": request}
 
 
 async def main() -> int:
@@ -54,8 +98,7 @@ async def main() -> int:
                 LOG.info("negotiation received but auto-accept disabled negotiation_id=%s", event.negotiation_id)
                 return
             try:
-                result = await client.accept_negotiation(event.negotiation_id)
-                LOG.info("accepted negotiation_id=%s order_id=%s", event.negotiation_id, result.order.order_id)
+                await handle_negotiation_created(client, event, auto_accept=auto_accept)
             except Exception:
                 LOG.exception("failed to accept negotiation_id=%s", event.negotiation_id)
 
@@ -64,22 +107,14 @@ async def main() -> int:
     def on_order_paid(event: Any) -> None:
         async def _handle() -> None:
             try:
-                order = await client.get_order(event.order_id)
-                negotiation = await client.get_negotiation(order.negotiation_id)
-                report = analyze_request(_parse_requirements(negotiation.requirements), use_openai=use_openai)
-                rendered = json.dumps(report, sort_keys=True)
-                if deliver_mode == "text":
-                    req = DeliverOrderRequest(
-                        deliverable_type=DeliverableType.TEXT,
-                        deliverable_text=json.dumps(report, indent=2, sort_keys=True),
-                    )
-                else:
-                    req = DeliverOrderRequest(
-                        deliverable_type=DeliverableType.SCHEMA,
-                        deliverable_schema=rendered,
-                    )
-                result = await client.deliver_order(event.order_id, req)
-                LOG.info("delivered order_id=%s tx_hash=%s report_hash=%s", event.order_id, result.tx_hash, report["proof"]["report_hash"])
+                await handle_order_paid(
+                    client,
+                    event,
+                    deliver_mode=deliver_mode,
+                    use_openai=use_openai,
+                    deliver_order_request_cls=DeliverOrderRequest,
+                    deliverable_type=DeliverableType,
+                )
             except Exception:
                 LOG.exception("failed to deliver order_id=%s", event.order_id)
 
@@ -103,4 +138,3 @@ async def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(asyncio.run(main()))
-
