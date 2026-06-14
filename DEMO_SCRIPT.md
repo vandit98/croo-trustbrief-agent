@@ -21,6 +21,7 @@ Run:
 ```bash
 python3 -m trustbrief_agent.cli examples/sample_request.json --output outputs/demo_report.json
 python3 -m trustbrief_agent.mock_cap_harness examples/sample_request.json --output outputs/mock_cap_demo.json
+python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --output outputs/judge_bundle.json
 ```
 
 Open the report and show:
@@ -31,6 +32,7 @@ Open the report and show:
 - `risk_flags`
 - `proof.report_hash`
 - `mock_cap_demo.json` showing mock `negotiation_id`, `order_id`, and `tx_hash`
+- `judge_bundle.json` showing the combined proof package, key asset hashes, and current repo commit
 
 ## 2:20-3:20 - CAP Provider Code
 

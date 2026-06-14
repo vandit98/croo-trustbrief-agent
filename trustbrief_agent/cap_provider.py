@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import datetime as dt
 import json
 import logging
 import os
@@ -59,10 +60,11 @@ async def handle_order_paid(
     use_openai: bool,
     deliver_order_request_cls: Type[Any],
     deliverable_type: Any,
+    analysis_now: Optional[dt.datetime] = None,
 ) -> Dict[str, Any]:
     order = await client.get_order(event.order_id)
     negotiation = await client.get_negotiation(order.negotiation_id)
-    report = analyze_request(_parse_requirements(negotiation.requirements), use_openai=use_openai)
+    report = analyze_request(_parse_requirements(negotiation.requirements), now=analysis_now, use_openai=use_openai)
     request = build_delivery_request(report, deliver_mode, deliver_order_request_cls, deliverable_type)
     result = await client.deliver_order(event.order_id, request)
     LOG.info("delivered order_id=%s tx_hash=%s report_hash=%s", event.order_id, result.tx_hash, report["proof"]["report_hash"])

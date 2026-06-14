@@ -3,9 +3,11 @@ import datetime as dt
 import json
 import unittest
 from dataclasses import dataclass
+from pathlib import Path
 
 from trustbrief_agent.cap_provider import build_delivery_request, handle_negotiation_created, handle_order_paid
 from trustbrief_agent.core import analyze_request, evaluate_claim, load_source
+from trustbrief_agent.evidence_bundle import build_evidence_bundle
 from trustbrief_agent.mock_cap_harness import run_mock_cap_flow
 
 
@@ -222,6 +224,32 @@ class TrustBriefTests(unittest.TestCase):
         self.assertEqual(transcript["delivery_mode"], "schema")
         self.assertIn("report_hash", transcript["report_summary"])
         self.assertGreater(transcript["delivered_preview"]["schema_bytes"], 0)
+
+    def test_evidence_bundle_collects_consistent_offline_proof(self):
+        bundle = build_evidence_bundle(
+            {
+                "task": "Verify judge-facing CROO claims.",
+                "subject": "TrustBrief bundle",
+                "claims": ["TrustBrief returns a report hash with evidence-backed claim assessments."],
+                "sources": [
+                    {
+                        "label": "fixture",
+                        "text": "TrustBrief returns a report hash, evidence-backed claim assessments, and source hashes.",
+                    }
+                ],
+            },
+            request_path=Path("examples/sample_request.json"),
+            repo_root=Path(__file__).resolve().parents[1],
+            analysis_now=FIXED_NOW,
+        )
+
+        self.assertEqual(bundle["bundle_schema_version"], "1.0.0")
+        self.assertEqual(bundle["repo_state"]["branch"], "main")
+        self.assertTrue(bundle["repo_state"]["commit"])
+        self.assertIn("service_schema", bundle["judge_assets"])
+        self.assertTrue(bundle["offline_proof"]["consistency_checks"]["report_hash_matches_transcript"])
+        self.assertTrue(bundle["offline_proof"]["consistency_checks"]["source_bundle_hash_matches_transcript"])
+        self.assertRegex(bundle["proof"]["bundle_hash"], r"^[a-f0-9]{64}$")
 
 
 if __name__ == "__main__":

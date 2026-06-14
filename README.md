@@ -31,10 +31,12 @@ cd /Users/vandit/Downloads/exploring/kaggle/croo-trustbrief-agent
 python3 -m unittest discover -s tests -p 'test_*.py'
 python3 -m trustbrief_agent.cli examples/sample_request.json --output outputs/demo_report.json
 python3 -m trustbrief_agent.mock_cap_harness examples/sample_request.json --output outputs/mock_cap_demo.json
+python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --output outputs/judge_bundle.json
 ```
 
 Inspect `outputs/demo_report.json` for the report hash, source ledger, and claim assessments.
 Inspect `outputs/mock_cap_demo.json` for a judge-visible mock negotiation, order acceptance, delivery transcript, and report hash.
+Inspect `outputs/judge_bundle.json` for one bundled artifact that includes the report, mock CAP transcript, key asset hashes, and local git evidence.
 
 ## Live CROO Provider
 
@@ -68,6 +70,17 @@ If OpenAI is not configured, TrustBrief still produces the deterministic source-
 2. `ORDER_PAID` -> `deliver_order`
 
 The harness reuses the real provider handlers from `trustbrief_agent/cap_provider.py`, so the offline transcript exercises the same request parsing, report generation, and deliverable rendering path that live CROO delivery uses.
+
+## Judge Bundle
+
+`trustbrief_agent/evidence_bundle.py` packages the main judge-visible proof into one JSON artifact:
+
+- the deterministic report from `trustbrief_agent.cli`
+- the mock CAP lifecycle transcript from `trustbrief_agent.mock_cap_harness`
+- `service_schema.json` plus hashes of README/demo/submission assets
+- local git branch, commit, remote, and dirty-state evidence
+
+This makes it easier to attach one artifact to a demo folder or screen recording without claiming live CROO execution.
 
 ## Agent Store Service Setup
 

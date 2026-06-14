@@ -30,6 +30,7 @@ TrustBrief is a CAP-callable provider agent. A requester submits a topic, claims
 - Deliverable can be `schema` or `text` through `TRUSTBRIEF_DELIVERABLE_MODE`.
 - Agent Store service configuration is captured in `service_schema.json`.
 - Offline lifecycle proof is captured by `trustbrief_agent/mock_cap_harness.py`, which replays accept-and-deliver flow without CROO secrets.
+- Judge bundle proof is captured by `trustbrief_agent/evidence_bundle.py`, which packages the report, CAP transcript, service schema, and git evidence into one artifact.
 
 ## Repository
 
@@ -45,10 +46,11 @@ License: MIT.
    ```bash
    python3 -m trustbrief_agent.cli examples/sample_request.json --output outputs/demo_report.json
    python3 -m trustbrief_agent.mock_cap_harness examples/sample_request.json --output outputs/mock_cap_demo.json
+   python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --output outputs/judge_bundle.json
    ```
 
-3. Open `outputs/demo_report.json` and `outputs/mock_cap_demo.json`.
-4. Point to `claim_assessments`, `source_ledger`, `risk_flags`, `proof.report_hash`, and the mock `negotiation_id` -> `order_id` -> `tx_hash` lifecycle.
+3. Open `outputs/demo_report.json`, `outputs/mock_cap_demo.json`, and `outputs/judge_bundle.json`.
+4. Point to `claim_assessments`, `source_ledger`, `risk_flags`, `proof.report_hash`, the mock `negotiation_id` -> `order_id` -> `tx_hash` lifecycle, and the bundle's repo evidence.
 5. Show `trustbrief_agent/cap_provider.py` handling CROO negotiation and paid delivery.
 6. Once dashboard credentials exist, start live provider:
 

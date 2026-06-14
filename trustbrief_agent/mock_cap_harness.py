@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import datetime as dt
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -97,7 +98,11 @@ def _read_payload(path: str) -> Dict[str, Any]:
     return decoded
 
 
-async def run_mock_cap_flow(request_payload: Dict[str, Any], deliver_mode: str = "schema") -> Dict[str, Any]:
+async def run_mock_cap_flow(
+    request_payload: Dict[str, Any],
+    deliver_mode: str = "schema",
+    analysis_now: Optional[dt.datetime] = None,
+) -> Dict[str, Any]:
     client = MockCapClient(request_payload)
 
     negotiation_event = _Event(type="NEGOTIATION_CREATED", negotiation_id=client.negotiation.negotiation_id)
@@ -111,6 +116,7 @@ async def run_mock_cap_flow(request_payload: Dict[str, Any], deliver_mode: str =
         use_openai=False,
         deliver_order_request_cls=_DeliverOrderRequest,
         deliverable_type=_DeliverableType,
+        analysis_now=analysis_now,
     )
 
     report = delivery["report"]
