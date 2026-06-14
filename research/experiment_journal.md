@@ -107,3 +107,8 @@ python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --outpu
 ### Next action
 
 When network access is restored, stage only the code/doc files for the judge bundle, push them to `main`, and use `outputs/judge_bundle.json` as the base artifact while replacing the mock CROO proof with one real listing + paid-order capture.
+
+### Follow-up
+
+- A later `git push origin main` in the same run succeeded and published commit `22a29426f7c4b2143376dd76870dd743d0e379c7` to `origin/main`.
+- `git ls-remote --heads origin main` continued to fail intermittently with `Could not resolve host: github.com`, so the most reliable remote evidence from this environment is the successful push output rather than a subsequent read check.
