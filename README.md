@@ -34,9 +34,19 @@ python3 -m trustbrief_agent.mock_cap_harness examples/sample_request.json --outp
 python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --output outputs/judge_bundle.json
 ```
 
+Or refresh the full judge pack in one command:
+
+```bash
+python3 -m trustbrief_agent.evidence_bundle \
+  examples/sample_request.json \
+  --report-output outputs/demo_report.json \
+  --mock-output outputs/mock_cap_demo.json \
+  --output outputs/judge_bundle.json
+```
+
 Inspect `outputs/demo_report.json` for the report hash, source ledger, and claim assessments.
 Inspect `outputs/mock_cap_demo.json` for a judge-visible mock negotiation, order acceptance, delivery transcript, and report hash.
-Inspect `outputs/judge_bundle.json` for one bundled artifact that includes the report, mock CAP transcript, key asset hashes, and local git evidence.
+Inspect `outputs/judge_bundle.json` for one bundled artifact that includes the report, mock CAP transcript, local git evidence, unit-test results, and hashes for the generated judge artifacts.
 
 ## Live CROO Provider
 
@@ -77,7 +87,9 @@ The harness reuses the real provider handlers from `trustbrief_agent/cap_provide
 
 - the deterministic report from `trustbrief_agent.cli`
 - the mock CAP lifecycle transcript from `trustbrief_agent.mock_cap_harness`
+- focused validation evidence from `python3 -m unittest discover -s tests -p 'test_*.py'`
 - `service_schema.json` plus hashes of README/demo/submission assets
+- hashes of the freshly generated report and mock transcript artifacts
 - local git branch, commit, remote, and dirty-state evidence
 
 This makes it easier to attach one artifact to a demo folder or screen recording without claiming live CROO execution.

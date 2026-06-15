@@ -1,6 +1,7 @@
 import asyncio
 import datetime as dt
 import json
+import tempfile
 import unittest
 from dataclasses import dataclass
 from pathlib import Path
@@ -226,27 +227,47 @@ class TrustBriefTests(unittest.TestCase):
         self.assertGreater(transcript["delivered_preview"]["schema_bytes"], 0)
 
     def test_evidence_bundle_collects_consistent_offline_proof(self):
-        bundle = build_evidence_bundle(
-            {
-                "task": "Verify judge-facing CROO claims.",
-                "subject": "TrustBrief bundle",
-                "claims": ["TrustBrief returns a report hash with evidence-backed claim assessments."],
-                "sources": [
-                    {
-                        "label": "fixture",
-                        "text": "TrustBrief returns a report hash, evidence-backed claim assessments, and source hashes.",
+        with tempfile.TemporaryDirectory() as tmpdir:
+            report_path = Path(tmpdir) / "test_demo_report.json"
+            mock_path = Path(tmpdir) / "test_mock_cap_demo.json"
+            report_path.write_text("{\"ok\":true}\n", encoding="utf-8")
+            mock_path.write_text("{\"ok\":true}\n", encoding="utf-8")
+
+            bundle = build_evidence_bundle(
+                {
+                    "task": "Verify judge-facing CROO claims.",
+                    "subject": "TrustBrief bundle",
+                    "claims": ["TrustBrief returns a report hash with evidence-backed claim assessments."],
+                    "sources": [
+                        {
+                            "label": "fixture",
+                            "text": "TrustBrief returns a report hash, evidence-backed claim assessments, and source hashes.",
+                        }
+                    ],
+                },
+                request_path=Path("examples/sample_request.json"),
+                repo_root=Path(__file__).resolve().parents[1],
+                analysis_now=FIXED_NOW,
+                validation_results={
+                    "tests": {
+                        "command": "python3 -m unittest discover -s tests -p 'test_*.py'",
+                        "exit_code": 0,
+                        "passed": True,
+                        "stdout_tail": ["Ran 8 tests in 0.057s", "OK"],
+                        "stderr_tail": [],
                     }
-                ],
-            },
-            request_path=Path("examples/sample_request.json"),
-            repo_root=Path(__file__).resolve().parents[1],
-            analysis_now=FIXED_NOW,
-        )
+                },
+                generated_artifact_paths=[report_path, mock_path],
+            )
 
         self.assertEqual(bundle["bundle_schema_version"], "1.0.0")
         self.assertEqual(bundle["repo_state"]["branch"], "main")
         self.assertTrue(bundle["repo_state"]["commit"])
         self.assertIn("service_schema", bundle["judge_assets"])
+        self.assertEqual(bundle["validation"]["tests"]["exit_code"], 0)
+        self.assertTrue(bundle["validation"]["tests"]["passed"])
+        self.assertEqual(len(bundle["judge_assets"]["generated_artifact_hashes"]), 2)
+        self.assertTrue(bundle["judge_assets"]["generated_artifact_hashes"][0]["path"].endswith("test_demo_report.json"))
         self.assertTrue(bundle["offline_proof"]["consistency_checks"]["report_hash_matches_transcript"])
         self.assertTrue(bundle["offline_proof"]["consistency_checks"]["source_bundle_hash_matches_transcript"])
         self.assertRegex(bundle["proof"]["bundle_hash"], r"^[a-f0-9]{64}$")

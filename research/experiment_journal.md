@@ -112,3 +112,67 @@ When network access is restored, stage only the code/doc files for the judge bun
 
 - A later `git push origin main` in the same run succeeded and published commit `22a29426f7c4b2143376dd76870dd743d0e379c7` to `origin/main`.
 - `git ls-remote --heads origin main` continued to fail intermittently with `Could not resolve host: github.com`, so the most reliable remote evidence from this environment is the successful push output rather than a subsequent read check.
+
+## 2026-06-15 Run - Daily Planner Refresh
+
+### Planner result
+
+- GitHub connector verifies the public repo is live on `main` at commit `7a782692d5a2c282bc236c7678f03249158cdc9d` (`Clarify journal push result`), so the public repo is ahead of the earlier judge-bundle commit.
+- Local branch matches `origin/main` today (`origin/main...HEAD` -> `0 0`) and `python3 -m unittest discover -s tests -p 'test_*.py'` still passes with `Ran 8 tests ... OK`.
+- Existing offline artifacts still support the story, but `outputs/judge_bundle.json` remains stale relative to the current public head because it still embeds repo commit `074f5813c83c5d1c8e5d33ec5e27b660423d6d70`.
+- I still could not verify the live Kaggle competition page, CROO dashboard state, or DoraHacks BUIDL page from the tools available in this run.
+
+### Planner decision
+
+The highest-upside executor target is still one real CROO proof chain: listing screenshot, provider online state, one paid order on the existing sample payload, and real `negotiation_id` / `order_id` / `tx_hash`. If credentials are still unavailable, the best fallback is regenerating the judge bundle and recording a tighter judge-first demo against the current public repo head.
+
+## 2026-06-15 Run - Validation-Backed Judge Bundle Refresh
+
+### Chosen target
+
+Automate evidence capture further by making the judge bundle regenerate the report and mock CAP transcript, record focused unit-test results, and hash the generated artifacts in one judge-visible refresh path.
+
+### Exact changes
+
+- Extended `trustbrief_agent/evidence_bundle.py` so it can:
+  - write fresh `outputs/demo_report.json` and `outputs/mock_cap_demo.json`
+  - run `python3 -m unittest discover -s tests -p 'test_*.py'`
+  - embed validation results plus generated-artifact hashes into `outputs/judge_bundle.json`
+- Added bundle coverage in `tests/test_trustbrief.py` for validation metadata and generated artifact hashes.
+- Updated `README.md`, `DEMO_SCRIPT.md`, and `HACKATHON_SUBMISSION.md` so the demo story uses the one-command judge-pack refresh path.
+
+### Commands run
+
+```bash
+git status --short --branch
+git rev-parse HEAD
+git rev-parse origin/main
+git rev-list --left-right --count origin/main...HEAD
+git ls-remote --heads origin main
+python3 -m unittest discover -s tests -p 'test_*.py'
+python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --report-output outputs/demo_report.json --mock-output outputs/mock_cap_demo.json --output outputs/judge_bundle.json
+```
+
+### Results
+
+- GitHub connector verified the public repo `vandit98/croo-trustbrief-agent` is still public on `main`; local `HEAD` and `origin/main` both resolved to `7a782692d5a2c282bc236c7678f03249158cdc9d`.
+- `git ls-remote --heads origin main` still failed here with `Could not resolve host: github.com`, so shell-based remote verification remains DNS-blocked.
+- `python3 -m unittest discover -s tests -p 'test_*.py'` -> `Ran 8 tests in 0.063s ... OK`
+- `python3 -m trustbrief_agent.evidence_bundle ...` succeeded and refreshed:
+  - `outputs/demo_report.json` -> `report_hash=e687a3ce01d2b80bcc0771daf5844bed5ab799d6432840d99b0cd4fe91d110dd`
+  - `outputs/mock_cap_demo.json` -> `tx_hash=0xmockdeliver01`, matching `report_hash=e687a3ce01d2b80bcc0771daf5844bed5ab799d6432840d99b0cd4fe91d110dd`
+  - `outputs/judge_bundle.json` -> `generated_at=2026-06-15T06:12:09Z`, `repo_state.commit=7a782692d5a2c282bc236c7678f03249158cdc9d`, `proof.bundle_hash=8f72bd9236378f6242752b14477e68b7bac3cf8f394845642fcfcb8a6bd1ab50`
+- The refreshed bundle now includes:
+  - `validation.tests.passed=true`
+  - hashes for `outputs/demo_report.json` and `outputs/mock_cap_demo.json`
+  - updated key-asset hashes for the README/demo/submission docs
+
+### Blockers
+
+- Live CROO marketplace proof is still blocked by missing CROO credentials and the no-wallet/no-payment guardrails.
+- Shell DNS access to GitHub remains unreliable here, so `git push` may still fail even though connector-based repo reads work.
+- The worktree still contains untracked planner-note files unrelated to this executor change, so staging must remain selective.
+
+### Next action
+
+If `git push origin main` succeeds from this environment, publish only the judge-bundle refresh files and use the new one-command evidence path as the default demo flow. If push remains blocked, keep the refreshed artifacts locally and use the GitHub connector or a later network-enabled session to publish them before chasing live CROO proof.

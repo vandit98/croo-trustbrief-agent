@@ -44,13 +44,15 @@ License: MIT.
 2. Run local demo:
 
    ```bash
-   python3 -m trustbrief_agent.cli examples/sample_request.json --output outputs/demo_report.json
-   python3 -m trustbrief_agent.mock_cap_harness examples/sample_request.json --output outputs/mock_cap_demo.json
-   python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --output outputs/judge_bundle.json
+   python3 -m trustbrief_agent.evidence_bundle \
+     examples/sample_request.json \
+     --report-output outputs/demo_report.json \
+     --mock-output outputs/mock_cap_demo.json \
+     --output outputs/judge_bundle.json
    ```
 
 3. Open `outputs/demo_report.json`, `outputs/mock_cap_demo.json`, and `outputs/judge_bundle.json`.
-4. Point to `claim_assessments`, `source_ledger`, `risk_flags`, `proof.report_hash`, the mock `negotiation_id` -> `order_id` -> `tx_hash` lifecycle, and the bundle's repo evidence.
+4. Point to `claim_assessments`, `source_ledger`, `risk_flags`, `proof.report_hash`, the mock `negotiation_id` -> `order_id` -> `tx_hash` lifecycle, and the bundle's repo plus validation evidence.
 5. Show `trustbrief_agent/cap_provider.py` handling CROO negotiation and paid delivery.
 6. Once dashboard credentials exist, start live provider:
 
@@ -77,4 +79,5 @@ License: MIT.
 - Paid service-shaped: clear unit, price, SLA, and schema requirements.
 - Verifiable: every fetched source receives a SHA-256 ledger entry.
 - Robust demo: no paid API key is needed for the core report.
+- Judge-ready proof pack: one command refreshes the report, CAP transcript, test result, and artifact hashes.
 - Optional LLM: model summary can be enabled, but the evidence report remains deterministic.
