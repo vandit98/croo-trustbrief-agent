@@ -31,6 +31,7 @@ cd /Users/vandit/Downloads/exploring/kaggle/croo-trustbrief-agent
 python3 -m unittest discover -s tests -p 'test_*.py'
 python3 -m trustbrief_agent.cli examples/sample_request.json --output outputs/demo_report.json
 python3 -m trustbrief_agent.mock_cap_harness examples/sample_request.json --output outputs/mock_cap_demo.json
+python3 -m trustbrief_agent.requester_harness examples/sample_request.json --output outputs/requester_demo.json
 python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --output outputs/judge_bundle.json
 ```
 
@@ -41,11 +42,13 @@ python3 -m trustbrief_agent.evidence_bundle \
   examples/sample_request.json \
   --report-output outputs/demo_report.json \
   --mock-output outputs/mock_cap_demo.json \
+  --requester-output outputs/requester_demo.json \
   --output outputs/judge_bundle.json
 ```
 
 Inspect `outputs/demo_report.json` for the report hash, source ledger, and claim assessments.
 Inspect `outputs/mock_cap_demo.json` for a judge-visible mock negotiation, order acceptance, delivery transcript, and report hash.
+Inspect `outputs/requester_demo.json` for request-schema validation, buyer-facing talking points, and credential-gated live-order steps.
 Inspect `outputs/judge_bundle.json` for one bundled artifact that includes the report, mock CAP transcript, local git evidence, unit-test results, and hashes for the generated judge artifacts.
 
 ## Live CROO Provider
@@ -81,12 +84,23 @@ If OpenAI is not configured, TrustBrief still produces the deterministic source-
 
 The harness reuses the real provider handlers from `trustbrief_agent/cap_provider.py`, so the offline transcript exercises the same request parsing, report generation, and deliverable rendering path that live CROO delivery uses.
 
+## Requester Demo Harness
+
+`trustbrief_agent/requester_harness.py` gives judges and buyer-agent reviewers a requester-side packet for the same sample payload:
+
+- validates the request against `service_schema.json`
+- previews the deterministic report hash and mock CAP lifecycle for that exact request
+- emits explicit blocked reasons and manual steps when CROO credentials are absent
+
+This makes the handoff between "judge sees the request" and "provider returns the deliverable" much easier to explain without claiming a live paid order.
+
 ## Judge Bundle
 
 `trustbrief_agent/evidence_bundle.py` packages the main judge-visible proof into one JSON artifact:
 
 - the deterministic report from `trustbrief_agent.cli`
 - the mock CAP lifecycle transcript from `trustbrief_agent.mock_cap_harness`
+- the requester-side validation packet from `trustbrief_agent.requester_harness`
 - focused validation evidence from `python3 -m unittest discover -s tests -p 'test_*.py'`
 - `service_schema.json` plus hashes of README/demo/submission assets
 - hashes of the freshly generated report and mock transcript artifacts

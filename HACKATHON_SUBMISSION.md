@@ -30,6 +30,7 @@ TrustBrief is a CAP-callable provider agent. A requester submits a topic, claims
 - Deliverable can be `schema` or `text` through `TRUSTBRIEF_DELIVERABLE_MODE`.
 - Agent Store service configuration is captured in `service_schema.json`.
 - Offline lifecycle proof is captured by `trustbrief_agent/mock_cap_harness.py`, which replays accept-and-deliver flow without CROO secrets.
+- Requester-side validation and live-order readiness proof are captured by `trustbrief_agent/requester_harness.py`, which checks the request against `service_schema.json` and emits exact manual next steps when credentials are absent.
 - Judge bundle proof is captured by `trustbrief_agent/evidence_bundle.py`, which packages the report, CAP transcript, service schema, and git evidence into one artifact.
 
 ## Repository
@@ -48,13 +49,15 @@ License: MIT.
      examples/sample_request.json \
      --report-output outputs/demo_report.json \
      --mock-output outputs/mock_cap_demo.json \
+     --requester-output outputs/requester_demo.json \
      --output outputs/judge_bundle.json
    ```
 
-3. Open `outputs/demo_report.json`, `outputs/mock_cap_demo.json`, and `outputs/judge_bundle.json`.
-4. Point to `claim_assessments`, `source_ledger`, `risk_flags`, `proof.report_hash`, the mock `negotiation_id` -> `order_id` -> `tx_hash` lifecycle, and the bundle's repo plus validation evidence.
-5. Show `trustbrief_agent/cap_provider.py` handling CROO negotiation and paid delivery.
-6. Once dashboard credentials exist, start live provider:
+3. Run `python3 -m trustbrief_agent.requester_harness examples/sample_request.json --output outputs/requester_demo.json`.
+4. Open `outputs/demo_report.json`, `outputs/mock_cap_demo.json`, `outputs/requester_demo.json`, and `outputs/judge_bundle.json`.
+5. Point to `claim_assessments`, `source_ledger`, `risk_flags`, `proof.report_hash`, the mock `negotiation_id` -> `order_id` -> `tx_hash` lifecycle, the requester-side schema validation, and the bundle's repo plus validation evidence.
+6. Show `trustbrief_agent/cap_provider.py` handling CROO negotiation and paid delivery.
+7. Once dashboard credentials exist, start live provider:
 
    ```bash
    export CROO_API_URL="https://api.croo.network"
@@ -79,5 +82,6 @@ License: MIT.
 - Paid service-shaped: clear unit, price, SLA, and schema requirements.
 - Verifiable: every fetched source receives a SHA-256 ledger entry.
 - Robust demo: no paid API key is needed for the core report.
+- Buyer-visible request flow: the same payload is validated and packaged from the requester side before any live order attempt.
 - Judge-ready proof pack: one command refreshes the report, CAP transcript, test result, and artifact hashes.
 - Optional LLM: model summary can be enabled, but the evidence report remains deterministic.

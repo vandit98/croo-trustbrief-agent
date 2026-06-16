@@ -10,6 +10,7 @@ from typing import Any, Dict, Iterable, Optional, Sequence
 
 from .core import analyze_request, canonical_json, sha256_text
 from .mock_cap_harness import run_mock_cap_flow
+from .requester_harness import build_requester_demo
 
 
 def _read_payload(path: str) -> Dict[str, Any]:
@@ -152,12 +153,18 @@ def build_evidence_bundle(
             "tests": "python3 -m unittest discover -s tests -p 'test_*.py'",
             "report_demo": "python3 -m trustbrief_agent.cli examples/sample_request.json --output outputs/demo_report.json",
             "mock_cap_demo": "python3 -m trustbrief_agent.mock_cap_harness examples/sample_request.json --output outputs/mock_cap_demo.json",
+            "requester_demo": "python3 -m trustbrief_agent.requester_harness examples/sample_request.json --output outputs/requester_demo.json",
             "judge_bundle": "python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --output outputs/judge_bundle.json",
         },
         "validation": validation_results or {},
         "offline_proof": {
             "report": report,
             "mock_cap_transcript": cap_transcript,
+            "requester_demo": build_requester_demo(
+                request_payload,
+                request_path=request_path,
+                service_schema_path=service_schema_path,
+            ),
             "consistency_checks": {
                 "report_hash_matches_transcript": report["proof"]["report_hash"] == cap_transcript["report_summary"]["report_hash"],
                 "source_bundle_hash_matches_transcript": report["proof"]["source_bundle_hash"] == cap_transcript["report_summary"]["source_bundle_hash"],
@@ -187,6 +194,7 @@ def main() -> int:
     parser.add_argument("--repo-root", help="Optional repository root to inspect.", default="")
     parser.add_argument("--report-output", help="Optional path to also write the deterministic report JSON.")
     parser.add_argument("--mock-output", help="Optional path to also write the mock CAP transcript JSON.")
+    parser.add_argument("--requester-output", help="Optional path to also write the requester demo JSON.")
     parser.add_argument("--skip-tests", action="store_true", help="Skip running unit tests while generating the bundle.")
     args = parser.parse_args()
 
@@ -206,6 +214,11 @@ def main() -> int:
         mock_output_path = Path(args.mock_output)
         _write_json(mock_output_path, cap_transcript)
         generated_paths.append(mock_output_path)
+    if args.requester_output:
+        requester_output_path = Path(args.requester_output)
+        requester_demo = build_requester_demo(payload, request_path=request_path)
+        _write_json(requester_output_path, requester_demo)
+        generated_paths.append(requester_output_path)
 
     validation_results = {}
     if not args.skip_tests:

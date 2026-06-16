@@ -10,6 +10,7 @@ from trustbrief_agent.cap_provider import build_delivery_request, handle_negotia
 from trustbrief_agent.core import analyze_request, evaluate_claim, load_source
 from trustbrief_agent.evidence_bundle import build_evidence_bundle
 from trustbrief_agent.mock_cap_harness import run_mock_cap_flow
+from trustbrief_agent.requester_harness import build_requester_demo, validate_request_against_service_schema
 
 
 FIXED_NOW = dt.datetime(2026, 6, 13, 0, 0, tzinfo=dt.timezone.utc)
@@ -270,7 +271,59 @@ class TrustBriefTests(unittest.TestCase):
         self.assertTrue(bundle["judge_assets"]["generated_artifact_hashes"][0]["path"].endswith("test_demo_report.json"))
         self.assertTrue(bundle["offline_proof"]["consistency_checks"]["report_hash_matches_transcript"])
         self.assertTrue(bundle["offline_proof"]["consistency_checks"]["source_bundle_hash_matches_transcript"])
+        self.assertTrue(bundle["offline_proof"]["requester_demo"]["schema_validation"]["valid"])
         self.assertRegex(bundle["proof"]["bundle_hash"], r"^[a-f0-9]{64}$")
+
+    def test_request_payload_validation_matches_service_schema(self):
+        service_schema = json.loads(Path("service_schema.json").read_text(encoding="utf-8"))
+        valid = validate_request_against_service_schema(
+            {
+                "task": "Verify claims.",
+                "subject": "TrustBrief request",
+                "claims": ["A claim"],
+                "sources": [{"label": "fixture", "text": "A source"}],
+            },
+            service_schema,
+        )
+        invalid = validate_request_against_service_schema(
+            {
+                "task": "",
+                "subject": "TrustBrief request",
+                "claims": "A claim",
+                "sources": [{"label": "fixture"}],
+            },
+            service_schema,
+        )
+
+        self.assertTrue(valid["valid"])
+        self.assertFalse(valid["errors"])
+        self.assertFalse(invalid["valid"])
+        self.assertIn("missing required field: task", invalid["errors"])
+        self.assertIn("claims must be array, got string", invalid["errors"])
+        self.assertIn("sources[0] must include at least one of url, text, or path", invalid["errors"])
+
+    def test_requester_demo_builds_offline_preview_and_live_readiness(self):
+        packet = build_requester_demo(
+            {
+                "task": "Verify judge-facing CROO claims.",
+                "subject": "TrustBrief requester harness",
+                "claims": ["TrustBrief returns a report hash with evidence-backed claim assessments."],
+                "sources": [
+                    {
+                        "label": "fixture",
+                        "text": "TrustBrief returns a report hash, evidence-backed claim assessments, and source hashes.",
+                    }
+                ],
+            },
+            request_path=Path("examples/sample_request.json"),
+        )
+
+        self.assertEqual(packet["requester_demo_schema_version"], "1.0.0")
+        self.assertTrue(packet["schema_validation"]["valid"])
+        self.assertRegex(packet["offline_preview"]["report_summary"]["report_hash"], r"^[a-f0-9]{64}$")
+        self.assertEqual(packet["offline_preview"]["mock_cap_summary"]["order_id"], "ord_mock_001")
+        self.assertFalse(packet["live_order_readiness"]["ready_to_attempt"])
+        self.assertIn("CROO_API_URL", packet["live_order_readiness"]["required_env"])
 
 
 if __name__ == "__main__":
