@@ -243,3 +243,62 @@ python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --repor
 ### Next action
 
 If push remains available, publish only the requester-harness and buyer-first demo changes to `main`, then use `outputs/requester_demo.json` plus `outputs/judge_bundle.json` as the default judge walkthrough until real CROO credentials are available for a live paid-order capture.
+
+## 2026-06-17 Run - Daily Planner Refresh
+
+### Planner result
+
+- Public GitHub verification is newer again: `vandit98/croo-trustbrief-agent` is public on `main` at commit `1ce0b9ac1897ab5cd943cc0cd7f2beb4760d2e1f` (`Add requester harness for buyer-first demo`).
+- `python3 -m unittest discover -s tests -p 'test_*.py'` still passes with `Ran 10 tests in 0.275s ... OK`.
+- The stored judge artifact is now one commit behind public head: `outputs/judge_bundle.json` still embeds repo commit `0145b0d5e90b30d507fda9bba52daa036d25d111`.
+- CROO public docs now add stronger strategic support for the current product direction: schema-based capability descriptors, dependency routing, dual human/A2A Agent Store procurement, and a Q2 beta focus on CCP lifecycle testing.
+- I still could not verify the exact Kaggle competition page for `croo-ai-agent-hackathon-10-k-usd-prize-pool` or a DoraHacks BUIDL page from the available public tools in this run.
+
+### Planner decision
+
+The best executor target for today is no longer generic repo polish and not a blocked live-payment attempt. It is a judge-bundle refresh to public head `1ce0b9a` followed by a buyer-first demo recording that foregrounds A2A procurement and pre-spend verification. Real CROO listing plus paid-order proof remains the overall highest-upside move, but it still requires credentials and payment access outside the planner lane.
+
+## 2026-06-17 Run - Public Repo Verification in Judge Bundle
+
+### Chosen target
+
+Automate evidence capture further by embedding verified public GitHub repo state into the judge bundle and adding a judge-visible consistency check that the refreshed artifact matches the public `main` head.
+
+### Exact changes
+
+- Extended `trustbrief_agent/evidence_bundle.py` to accept optional public-repo verification fields from the CLI and embed them as `public_repo_state` in `outputs/judge_bundle.json`.
+- Added `offline_proof.consistency_checks.local_commit_matches_public_head` so the artifact proves whether the local bundle was generated from the same commit judges see on GitHub.
+- Added focused test coverage in `tests/test_trustbrief.py` for the new public-repo metadata path and mismatch detection.
+- Updated `README.md`, `DEMO_SCRIPT.md`, and `HACKATHON_SUBMISSION.md` so the one-command judge-pack flow can stamp verified public GitHub head metadata into the bundle.
+
+### Commands run
+
+```bash
+git status --short
+git rev-parse HEAD
+python3 -m unittest discover -s tests -p 'test_*.py'
+python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --report-output outputs/demo_report.json --mock-output outputs/mock_cap_demo.json --requester-output outputs/requester_demo.json --public-repo-url https://github.com/vandit98/croo-trustbrief-agent --public-default-branch main --public-visibility public --public-head-commit 1ce0b9ac1897ab5cd943cc0cd7f2beb4760d2e1f --public-head-url https://github.com/vandit98/croo-trustbrief-agent/commit/1ce0b9ac1897ab5cd943cc0cd7f2beb4760d2e1f --public-verified-at 2026-06-17T00:00:00Z --public-verification-source "GitHub connector" --output outputs/judge_bundle.json
+python3 -m trustbrief_agent.requester_harness examples/sample_request.json --output outputs/requester_demo.json
+python3 -m trustbrief_agent.cli examples/sample_request.json --output outputs/demo_report.json
+python3 -m trustbrief_agent.mock_cap_harness examples/sample_request.json --output outputs/mock_cap_demo.json
+```
+
+### Results
+
+- GitHub connector verified the public repo `vandit98/croo-trustbrief-agent` is public on `main`, and commit `1ce0b9ac1897ab5cd943cc0cd7f2beb4760d2e1f` (`Add requester harness for buyer-first demo`) is publicly reachable.
+- `python3 -m unittest discover -s tests -p 'test_*.py'` -> `Ran 10 tests in 0.556s ... OK`
+- Refreshed artifacts now show:
+  - `outputs/demo_report.json` -> `recommendation=needs_review`, `overall_evidence_score=0.7693`, `report_hash=e0ceef89d0a66c7d9db89fc489bfa3d214807ba3ed0be64b9b26935ded8a0793`
+  - `outputs/mock_cap_demo.json` -> `delivery_mode=schema`, `tx_hash=0xmockdeliver01`, matching `report_hash=e0ceef89d0a66c7d9db89fc489bfa3d214807ba3ed0be64b9b26935ded8a0793`
+  - `outputs/requester_demo.json` -> `schema_validation.valid=true`, `ready_to_attempt=false`
+  - `outputs/judge_bundle.json` -> `generated_at=2026-06-17T05:50:13Z`, `repo_state.commit=1ce0b9ac1897ab5cd943cc0cd7f2beb4760d2e1f`, `public_repo_state.head_commit=1ce0b9ac1897ab5cd943cc0cd7f2beb4760d2e1f`, `local_commit_matches_public_head=true`, `proof.bundle_hash=0c8e86e6f758d566fe2285ea8dc37dc3f3484cd2cebce893309e7b4badf822ad`
+
+### Blockers
+
+- Live CROO proof is still blocked by missing `CROO_API_URL`, `CROO_WS_URL`, and `CROO_SDK_KEY`, so this remains an offline proof improvement rather than a real paid-order capture.
+- The Kaggle competition page and DoraHacks submission page remain unverified in this run.
+- The worktree still contains unrelated untracked planner-note files, so staging for any commit must stay selective.
+
+### Next action
+
+Commit and push only the public-verification bundle changes, then use the refreshed bundle as the default judge artifact until a credentialed session can capture one real CROO listing and paid-order proof chain.

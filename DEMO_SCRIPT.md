@@ -24,6 +24,10 @@ python3 -m trustbrief_agent.evidence_bundle \
   --report-output outputs/demo_report.json \
   --mock-output outputs/mock_cap_demo.json \
   --requester-output outputs/requester_demo.json \
+  --public-head-commit <verified-public-head-sha> \
+  --public-head-url https://github.com/vandit98/croo-trustbrief-agent/commit/<verified-public-head-sha> \
+  --public-verified-at <verified-at-iso8601> \
+  --public-verification-source "GitHub connector" \
   --output outputs/judge_bundle.json
 ```
 
@@ -37,6 +41,7 @@ Open the report and show:
 - `mock_cap_demo.json` showing mock `negotiation_id`, `order_id`, and `tx_hash`
 - `requester_demo.json` showing request-schema validation plus exact live-order blockers and manual steps
 - `judge_bundle.json` showing the combined proof package, generated artifact hashes, unit-test pass result, and current repo commit
+- `judge_bundle.json.public_repo_state` showing the verified public `main` head and whether the local bundle matches it
 
 ## 2:20-3:20 - CAP Provider Code
 

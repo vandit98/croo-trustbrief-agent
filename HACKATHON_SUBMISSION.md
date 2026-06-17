@@ -31,7 +31,7 @@ TrustBrief is a CAP-callable provider agent. A requester submits a topic, claims
 - Agent Store service configuration is captured in `service_schema.json`.
 - Offline lifecycle proof is captured by `trustbrief_agent/mock_cap_harness.py`, which replays accept-and-deliver flow without CROO secrets.
 - Requester-side validation and live-order readiness proof are captured by `trustbrief_agent/requester_harness.py`, which checks the request against `service_schema.json` and emits exact manual next steps when credentials are absent.
-- Judge bundle proof is captured by `trustbrief_agent/evidence_bundle.py`, which packages the report, CAP transcript, service schema, and git evidence into one artifact.
+- Judge bundle proof is captured by `trustbrief_agent/evidence_bundle.py`, which packages the report, CAP transcript, service schema, local git evidence, and optional verified public GitHub head metadata into one artifact.
 
 ## Repository
 
@@ -50,6 +50,10 @@ License: MIT.
      --report-output outputs/demo_report.json \
      --mock-output outputs/mock_cap_demo.json \
      --requester-output outputs/requester_demo.json \
+     --public-head-commit <verified-public-head-sha> \
+     --public-head-url https://github.com/vandit98/croo-trustbrief-agent/commit/<verified-public-head-sha> \
+     --public-verified-at <verified-at-iso8601> \
+     --public-verification-source "GitHub connector" \
      --output outputs/judge_bundle.json
    ```
 

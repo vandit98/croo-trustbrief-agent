@@ -259,11 +259,20 @@ class TrustBriefTests(unittest.TestCase):
                     }
                 },
                 generated_artifact_paths=[report_path, mock_path],
+                public_repo_state={
+                    "repository_url": "https://github.com/vandit98/croo-trustbrief-agent",
+                    "default_branch": "main",
+                    "visibility": "public",
+                    "head_commit": "074f5813c83c5d1c8e5d33ec5e27b660423d6d70",
+                    "verified_at": "2026-06-14T00:00:00Z",
+                    "verification_source": "unit-test fixture",
+                },
             )
 
         self.assertEqual(bundle["bundle_schema_version"], "1.0.0")
         self.assertEqual(bundle["repo_state"]["branch"], "main")
         self.assertTrue(bundle["repo_state"]["commit"])
+        self.assertEqual(bundle["public_repo_state"]["default_branch"], "main")
         self.assertIn("service_schema", bundle["judge_assets"])
         self.assertEqual(bundle["validation"]["tests"]["exit_code"], 0)
         self.assertTrue(bundle["validation"]["tests"]["passed"])
@@ -272,6 +281,7 @@ class TrustBriefTests(unittest.TestCase):
         self.assertTrue(bundle["offline_proof"]["consistency_checks"]["report_hash_matches_transcript"])
         self.assertTrue(bundle["offline_proof"]["consistency_checks"]["source_bundle_hash_matches_transcript"])
         self.assertTrue(bundle["offline_proof"]["requester_demo"]["schema_validation"]["valid"])
+        self.assertFalse(bundle["offline_proof"]["consistency_checks"]["local_commit_matches_public_head"])
         self.assertRegex(bundle["proof"]["bundle_hash"], r"^[a-f0-9]{64}$")
 
     def test_request_payload_validation_matches_service_schema(self):

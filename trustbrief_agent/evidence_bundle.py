@@ -91,6 +91,7 @@ def build_evidence_bundle(
     cap_transcript: Optional[Dict[str, Any]] = None,
     validation_results: Optional[Dict[str, Any]] = None,
     generated_artifact_paths: Optional[Iterable[Path]] = None,
+    public_repo_state: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     repo_root = (repo_root or Path(__file__).resolve().parents[1]).resolve()
     analysis_now = analysis_now or dt.datetime.now(dt.timezone.utc)
@@ -110,6 +111,7 @@ def build_evidence_bundle(
     branch = _run_git(repo_root, "rev-parse", "--abbrev-ref", "HEAD")
     commit = _run_git(repo_root, "rev-parse", "HEAD")
     remote_origin = _run_git(repo_root, "remote", "get-url", "origin")
+    public_repo_state = dict(public_repo_state or {})
 
     key_assets = []
     for path in (service_schema_path, readme_path, demo_script_path, submission_path):
@@ -143,6 +145,7 @@ def build_evidence_bundle(
             "dirty": bool(status_lines),
             "status_short": status_lines,
         },
+        "public_repo_state": public_repo_state,
         "judge_assets": {
             "service_schema": _load_json(service_schema_path),
             "service_schema_sha256": sha256_text(service_schema_path.read_text(encoding="utf-8")),
@@ -168,6 +171,9 @@ def build_evidence_bundle(
             "consistency_checks": {
                 "report_hash_matches_transcript": report["proof"]["report_hash"] == cap_transcript["report_summary"]["report_hash"],
                 "source_bundle_hash_matches_transcript": report["proof"]["source_bundle_hash"] == cap_transcript["report_summary"]["source_bundle_hash"],
+                "local_commit_matches_public_head": (
+                    public_repo_state.get("head_commit", "") == commit if public_repo_state.get("head_commit") else None
+                ),
             },
         },
         "blocked_live_steps": [
@@ -195,6 +201,17 @@ def main() -> int:
     parser.add_argument("--report-output", help="Optional path to also write the deterministic report JSON.")
     parser.add_argument("--mock-output", help="Optional path to also write the mock CAP transcript JSON.")
     parser.add_argument("--requester-output", help="Optional path to also write the requester demo JSON.")
+    parser.add_argument("--public-repo-url", help="Optional verified public repository URL.")
+    parser.add_argument("--public-default-branch", help="Optional verified public default branch.")
+    parser.add_argument("--public-visibility", help="Optional verified public repository visibility.")
+    parser.add_argument("--public-head-commit", help="Optional verified public head commit SHA.")
+    parser.add_argument("--public-head-url", help="Optional verified public head commit URL.")
+    parser.add_argument("--public-verified-at", help="Optional ISO timestamp for the public repo verification.")
+    parser.add_argument(
+        "--public-verification-source",
+        help="Optional note describing how public repo state was verified.",
+        default="",
+    )
     parser.add_argument("--skip-tests", action="store_true", help="Skip running unit tests while generating the bundle.")
     args = parser.parse_args()
 
@@ -227,6 +244,17 @@ def main() -> int:
             ["python3", "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py"],
         )
 
+    public_repo_state = {
+        "repository_url": args.public_repo_url,
+        "default_branch": args.public_default_branch,
+        "visibility": args.public_visibility,
+        "head_commit": args.public_head_commit,
+        "head_commit_url": args.public_head_url,
+        "verified_at": args.public_verified_at,
+        "verification_source": args.public_verification_source,
+    }
+    public_repo_state = {key: value for key, value in public_repo_state.items() if value}
+
     bundle = build_evidence_bundle(
         payload,
         request_path=request_path,
@@ -236,6 +264,7 @@ def main() -> int:
         cap_transcript=cap_transcript,
         validation_results=validation_results,
         generated_artifact_paths=generated_paths,
+        public_repo_state=public_repo_state,
     )
     rendered = json.dumps(bundle, indent=2, sort_keys=True)
     if args.output:

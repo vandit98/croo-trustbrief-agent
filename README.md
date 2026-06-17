@@ -43,6 +43,13 @@ python3 -m trustbrief_agent.evidence_bundle \
   --report-output outputs/demo_report.json \
   --mock-output outputs/mock_cap_demo.json \
   --requester-output outputs/requester_demo.json \
+  --public-repo-url https://github.com/vandit98/croo-trustbrief-agent \
+  --public-default-branch main \
+  --public-visibility public \
+  --public-head-commit <verified-public-head-sha> \
+  --public-head-url https://github.com/vandit98/croo-trustbrief-agent/commit/<verified-public-head-sha> \
+  --public-verified-at <verified-at-iso8601> \
+  --public-verification-source "GitHub connector" \
   --output outputs/judge_bundle.json
 ```
 
@@ -105,6 +112,7 @@ This makes the handoff between "judge sees the request" and "provider returns th
 - `service_schema.json` plus hashes of README/demo/submission assets
 - hashes of the freshly generated report and mock transcript artifacts
 - local git branch, commit, remote, and dirty-state evidence
+- optional public GitHub verification metadata plus a local-head vs public-head consistency check
 
 This makes it easier to attach one artifact to a demo folder or screen recording without claiming live CROO execution.
 
