@@ -302,3 +302,69 @@ python3 -m trustbrief_agent.mock_cap_harness examples/sample_request.json --outp
 ### Next action
 
 Commit and push only the public-verification bundle changes, then use the refreshed bundle as the default judge artifact until a credentialed session can capture one real CROO listing and paid-order proof chain.
+
+## 2026-06-18 Run - Daily Planner Refresh
+
+### Planner result
+
+- Kaggle competition page is directly reachable today and publicly describes the event as `Build paid, callable AI agents on the CROO agent commerce layer.`
+- Public GitHub verification moved forward again: local `HEAD`, `origin/main`, and `git ls-remote --heads origin main` all resolve to `096a54fec07de51b1d3378707fab95b21f01c1ea` (`Add public repo verification to judge bundle`).
+- CROO public docs still support the same strategic story: missing A2A/H2A coordination standards, Agent Store as part of the architecture stack, and Agent Store beta for H2A/A2A economic interactions.
+- The stored `outputs/judge_bundle.json` is stale again because it still embeds repo commit `1ce0b9ac1897ab5cd943cc0cd7f2beb4760d2e1f` while public `main` is now `096a54f`.
+- DoraHacks direct page status is still unverified in this run because `https://dorahacks.io/hackathon/croo-hackathon` returned HTTP 405 from the shell fetch path.
+
+### Planner decision
+
+The single best executor target for June 18, 2026 is to refresh `outputs/judge_bundle.json` to public head `096a54f` and use that refreshed artifact as the anchor for a short buyer-first demo pass. The highest-upside overall move is still one real CROO listing plus paid-order proof chain, but that remains blocked on dashboard credentials, SDK credentials, and payment access outside the planner lane.
+
+## 2026-06-18 Run - Credential-Gated Live-Order Readiness Pack
+
+### Chosen target
+
+Prepare credential-gated live-order steps by upgrading the requester-side demo packet into a stricter readiness artifact, then refresh the judge bundle on verified public head `096a54fec07de51b1d3378707fab95b21f01c1ea`.
+
+### Exact changes
+
+- Extended `trustbrief_agent/requester_harness.py` so `outputs/requester_demo.json` now includes:
+  - gate checks for request-schema validity, service-listing readiness, and required CROO env presence
+  - a provider launch command and working directory for the first real CROO session
+  - exact proof targets for the first live run: listing URL/screenshot, provider-online logs, real `negotiation_id` / `order_id` / `tx_hash`, delivered report hash, and request fingerprint
+  - specific blocked reasons keyed to the missing CROO runtime env vars instead of one generic readiness flag
+- Extended `trustbrief_agent/evidence_bundle.py` so `blocked_live_steps` also surfaces the requester packet's concrete blockers in the judge bundle itself.
+- Added focused assertions in `tests/test_trustbrief.py` for the new readiness gates, provider start command, and proof-target structure.
+- Updated `README.md`, `DEMO_SCRIPT.md`, and `HACKATHON_SUBMISSION.md` so the buyer-first demo story explicitly points judges to the live-order gate checks and missing proof artifacts.
+
+### Commands run
+
+```bash
+git status --short --branch
+GIT_TERMINAL_PROMPT=0 git ls-remote https://github.com/vandit98/croo-trustbrief-agent.git refs/heads/main
+python3 -m unittest discover -s tests -p 'test_*.py'
+python3 -m trustbrief_agent.requester_harness examples/sample_request.json --output outputs/requester_demo.json
+python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --report-output outputs/demo_report.json --mock-output outputs/mock_cap_demo.json --requester-output outputs/requester_demo.json --public-repo-url https://github.com/vandit98/croo-trustbrief-agent --public-default-branch main --public-visibility public --public-head-commit 096a54fec07de51b1d3378707fab95b21f01c1ea --public-head-url https://github.com/vandit98/croo-trustbrief-agent/commit/096a54fec07de51b1d3378707fab95b21f01c1ea --public-verified-at 2026-06-18T00:00:00Z --public-verification-source "git ls-remote" --output outputs/judge_bundle.json
+```
+
+### Results
+
+- `GIT_TERMINAL_PROMPT=0 git ls-remote ...` verified public `main` at `096a54fec07de51b1d3378707fab95b21f01c1ea`.
+- `python3 -m unittest discover -s tests -p 'test_*.py'` -> `Ran 10 tests in 7.515s ... OK`
+- Refreshed requester artifact:
+  - `outputs/requester_demo.json` -> `ready_to_attempt=false`
+  - `gate_checks={"request_schema_valid": true, "service_listing_ready": true, "required_env_present": false}`
+  - `blocked_reasons=["Missing CROO runtime env vars: CROO_API_URL, CROO_WS_URL, CROO_SDK_KEY."]`
+  - `provider_start.command=python3.10 -m trustbrief_agent.cap_provider`
+  - `proof_targets=[agent_store_listing, provider_online_state, paid_order_chain, delivered_report_hash, request_payload_fingerprint]`
+- Refreshed judge/demo artifacts:
+  - `outputs/demo_report.json` -> `recommendation=needs_review`, `overall_evidence_score=0.7693`, `report_hash=1f595e570d476ce6119856f4c318c8f87da41477d4ef943c6eed122cebe46266`
+  - `outputs/mock_cap_demo.json` -> `tx_hash=0xmockdeliver01`, matching `report_hash=1f595e570d476ce6119856f4c318c8f87da41477d4ef943c6eed122cebe46266`
+  - `outputs/judge_bundle.json` -> `repo_state.commit=096a54fec07de51b1d3378707fab95b21f01c1ea`, `public_repo_state.head_commit=096a54fec07de51b1d3378707fab95b21f01c1ea`, `local_commit_matches_public_head=true`, `proof.bundle_hash=5b3c983c816312c28130708aef24f50f7e3934567a593a077f547467de55c695`
+
+### Blockers
+
+- No valid `CROO_API_URL`, `CROO_WS_URL`, or `CROO_SDK_KEY` are present, so a real provider session and paid-order proof remain blocked.
+- CROO dashboard login, listing publication, and DoraHacks filing are still authenticated manual steps outside this run.
+- The worktree still contains unrelated planner-note files, so any commit must continue to stage only the intended executor files plus refreshed outputs.
+
+### Next action
+
+Commit and push the readiness-pack plus refreshed proof artifacts to `main`, then use `outputs/requester_demo.json` and `outputs/judge_bundle.json` as the default judge walkthrough until a credentialed session can capture one real CROO listing and paid-order proof chain.

@@ -183,6 +183,10 @@ def build_evidence_bundle(
         ],
     }
 
+    requester_blockers = bundle["offline_proof"]["requester_demo"]["live_order_readiness"]["blocked_reasons"]
+    if requester_blockers:
+        bundle["blocked_live_steps"].extend(requester_blockers)
+
     stable = dict(bundle)
     proof = {
         "bundle_hash": sha256_text(canonical_json(stable)),

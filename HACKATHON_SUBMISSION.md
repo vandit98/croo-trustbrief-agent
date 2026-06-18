@@ -30,7 +30,7 @@ TrustBrief is a CAP-callable provider agent. A requester submits a topic, claims
 - Deliverable can be `schema` or `text` through `TRUSTBRIEF_DELIVERABLE_MODE`.
 - Agent Store service configuration is captured in `service_schema.json`.
 - Offline lifecycle proof is captured by `trustbrief_agent/mock_cap_harness.py`, which replays accept-and-deliver flow without CROO secrets.
-- Requester-side validation and live-order readiness proof are captured by `trustbrief_agent/requester_harness.py`, which checks the request against `service_schema.json` and emits exact manual next steps when credentials are absent.
+- Requester-side validation and live-order readiness proof are captured by `trustbrief_agent/requester_harness.py`, which checks the request against `service_schema.json` and emits gate checks, provider launch details, and the exact live proof artifacts still needed when credentials are absent.
 - Judge bundle proof is captured by `trustbrief_agent/evidence_bundle.py`, which packages the report, CAP transcript, service schema, local git evidence, and optional verified public GitHub head metadata into one artifact.
 
 ## Repository

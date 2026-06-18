@@ -39,7 +39,7 @@ Open the report and show:
 - `risk_flags`
 - `proof.report_hash`
 - `mock_cap_demo.json` showing mock `negotiation_id`, `order_id`, and `tx_hash`
-- `requester_demo.json` showing request-schema validation plus exact live-order blockers and manual steps
+- `requester_demo.json` showing request-schema validation, live-order gate checks, provider launch command, and the exact proof artifacts still needed from CROO
 - `judge_bundle.json` showing the combined proof package, generated artifact hashes, unit-test pass result, and current repo commit
 - `judge_bundle.json.public_repo_state` showing the verified public `main` head and whether the local bundle matches it
 

@@ -333,7 +333,11 @@ class TrustBriefTests(unittest.TestCase):
         self.assertRegex(packet["offline_preview"]["report_summary"]["report_hash"], r"^[a-f0-9]{64}$")
         self.assertEqual(packet["offline_preview"]["mock_cap_summary"]["order_id"], "ord_mock_001")
         self.assertFalse(packet["live_order_readiness"]["ready_to_attempt"])
+        self.assertFalse(packet["live_order_readiness"]["gate_checks"]["required_env_present"])
+        self.assertTrue(packet["live_order_readiness"]["service_readiness"]["ready"])
         self.assertIn("CROO_API_URL", packet["live_order_readiness"]["required_env"])
+        self.assertIn("proof_targets", packet["live_order_readiness"])
+        self.assertEqual(packet["live_order_readiness"]["provider_start"]["command"], "python3.10 -m trustbrief_agent.cap_provider")
 
 
 if __name__ == "__main__":

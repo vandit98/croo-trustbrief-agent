@@ -55,7 +55,7 @@ python3 -m trustbrief_agent.evidence_bundle \
 
 Inspect `outputs/demo_report.json` for the report hash, source ledger, and claim assessments.
 Inspect `outputs/mock_cap_demo.json` for a judge-visible mock negotiation, order acceptance, delivery transcript, and report hash.
-Inspect `outputs/requester_demo.json` for request-schema validation, buyer-facing talking points, and credential-gated live-order steps.
+Inspect `outputs/requester_demo.json` for request-schema validation, buyer-facing talking points, live-order gate checks, provider launch command, and the exact proof targets to capture once CROO credentials exist.
 Inspect `outputs/judge_bundle.json` for one bundled artifact that includes the report, mock CAP transcript, local git evidence, unit-test results, and hashes for the generated judge artifacts.
 
 ## Live CROO Provider
@@ -97,7 +97,7 @@ The harness reuses the real provider handlers from `trustbrief_agent/cap_provide
 
 - validates the request against `service_schema.json`
 - previews the deterministic report hash and mock CAP lifecycle for that exact request
-- emits explicit blocked reasons and manual steps when CROO credentials are absent
+- emits explicit gate checks, blocked reasons, provider launch details, and the exact live proof artifacts to capture when CROO credentials are absent
 
 This makes the handoff between "judge sees the request" and "provider returns the deliverable" much easier to explain without claiming a live paid order.
 

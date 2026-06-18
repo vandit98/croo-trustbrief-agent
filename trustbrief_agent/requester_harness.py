@@ -107,6 +107,64 @@ def _env_status(names: Sequence[str]) -> Dict[str, bool]:
     return {name: bool(os.environ.get(name)) for name in names}
 
 
+def _service_readiness(service_schema: Dict[str, Any]) -> Dict[str, Any]:
+    listing = service_schema.get("agent_store_listing", {})
+    service = service_schema.get("service", {})
+    required_listing = ("agent_name", "short_description", "tracks")
+    required_service = ("service_name", "price_usdc", "deliverable_type", "requirements_type")
+
+    missing_listing = [field for field in required_listing if not listing.get(field)]
+    missing_service = [field for field in required_service if service.get(field) in ("", None, [])]
+
+    return {
+        "ready": not missing_listing and not missing_service,
+        "missing_listing_fields": missing_listing,
+        "missing_service_fields": missing_service,
+        "listing_summary": {
+            "agent_name": listing.get("agent_name", ""),
+            "service_name": service.get("service_name", ""),
+            "price_usdc": service.get("price_usdc"),
+            "sla_minutes": service.get("sla_minutes"),
+            "deliverable_type": service.get("deliverable_type", ""),
+            "requirements_type": service.get("requirements_type", ""),
+        },
+    }
+
+
+def _provider_start_command() -> str:
+    return "python3.10 -m trustbrief_agent.cap_provider"
+
+
+def _live_proof_targets(request_payload: Dict[str, Any], report_hash: str) -> List[Dict[str, str]]:
+    return [
+        {
+            "artifact": "agent_store_listing",
+            "why": "Proves the provider is actually listed in CROO Agent Store.",
+            "capture": "Record the public listing URL plus one screenshot showing agent name, service name, price, and SLA.",
+        },
+        {
+            "artifact": "provider_online_state",
+            "why": "Shows the provider connected with valid CROO credentials.",
+            "capture": "Capture provider startup logs after setting CROO_API_URL, CROO_WS_URL, and CROO_SDK_KEY.",
+        },
+        {
+            "artifact": "paid_order_chain",
+            "why": "This is the strongest judge-visible proof that CAP negotiation, payment, and delivery worked end to end.",
+            "capture": "Capture the real negotiation_id, order_id, and tx_hash for this exact request payload.",
+        },
+        {
+            "artifact": "delivered_report_hash",
+            "why": "Lets judges compare the live-delivered object to the offline deterministic preview.",
+            "capture": "Record the delivered report hash and compare it to offline preview report_hash={}.".format(report_hash),
+        },
+        {
+            "artifact": "request_payload_fingerprint",
+            "why": "Prevents ambiguity about which buyer request produced the live proof.",
+            "capture": "Keep the exact JSON payload and its hash with the live proof package.",
+        },
+    ]
+
+
 def build_requester_demo(
     request_payload: Dict[str, Any],
     *,
@@ -117,12 +175,21 @@ def build_requester_demo(
     service_schema_path = service_schema_path or (repo_root / "service_schema.json")
     service_schema = _read_json(service_schema_path)
     validation = validate_request_against_service_schema(request_payload, service_schema)
+    service_readiness = _service_readiness(service_schema)
     report = analyze_request(request_payload, use_openai=False)
     mock_transcript = asyncio.run(run_mock_cap_flow(request_payload, deliver_mode="schema"))
 
     live_env = _env_status(["CROO_API_URL", "CROO_WS_URL", "CROO_SDK_KEY"])
     openai_env = _env_status(["OPENAI_API_KEY"])
-    live_ready = all(live_env.values())
+    blocked_reasons: List[str] = []
+    if not validation["valid"]:
+        blocked_reasons.append("Request payload does not yet satisfy the Agent Store requirements schema.")
+    if not service_readiness["ready"]:
+        blocked_reasons.append("Service listing metadata is incomplete for a live Agent Store run.")
+    missing_env = [name for name, present in live_env.items() if not present]
+    if missing_env:
+        blocked_reasons.append("Missing CROO runtime env vars: {}.".format(", ".join(missing_env)))
+    live_ready = not blocked_reasons
 
     return {
         "requester_demo_schema_version": "1.0.0",
@@ -157,15 +224,27 @@ def build_requester_demo(
         ],
         "live_order_readiness": {
             "ready_to_attempt": live_ready,
+            "gate_checks": {
+                "request_schema_valid": validation["valid"],
+                "service_listing_ready": service_readiness["ready"],
+                "required_env_present": all(live_env.values()),
+            },
             "required_env": live_env,
             "optional_env": openai_env,
-            "blocked_reasons": [] if live_ready else [
-                "Set CROO_API_URL, CROO_WS_URL, and CROO_SDK_KEY before attempting a live provider session.",
-            ],
+            "service_readiness": service_readiness,
+            "provider_start": {
+                "command": _provider_start_command(),
+                "working_directory": str(repo_root),
+            },
+            "proof_targets": _live_proof_targets(request_payload, report["proof"]["report_hash"]),
+            "blocked_reasons": blocked_reasons,
             "manual_steps": [
                 "Register the provider in the CROO Agent Store dashboard and paste service_schema.json.",
-                "Start the provider with python3.10 -m trustbrief_agent.cap_provider after setting CROO env vars.",
+                "Export CROO_API_URL, CROO_WS_URL, and CROO_SDK_KEY, then start the provider with {}.".format(
+                    _provider_start_command()
+                ),
                 "Submit this exact request payload from the requester side and capture the real negotiation_id, order_id, and tx_hash.",
+                "Compare the live-delivered report hash to the offline preview hash before claiming the live proof chain.",
             ],
         },
     }
