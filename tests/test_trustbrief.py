@@ -8,7 +8,7 @@ from pathlib import Path
 
 from trustbrief_agent.cap_provider import build_delivery_request, handle_negotiation_created, handle_order_paid
 from trustbrief_agent.core import analyze_request, evaluate_claim, load_source
-from trustbrief_agent.evidence_bundle import build_evidence_bundle
+from trustbrief_agent.evidence_bundle import _build_artifact_freshness, build_evidence_bundle
 from trustbrief_agent.mock_cap_harness import run_mock_cap_flow
 from trustbrief_agent.requester_harness import build_requester_demo, validate_request_against_service_schema
 
@@ -282,7 +282,38 @@ class TrustBriefTests(unittest.TestCase):
         self.assertTrue(bundle["offline_proof"]["consistency_checks"]["source_bundle_hash_matches_transcript"])
         self.assertTrue(bundle["offline_proof"]["requester_demo"]["schema_validation"]["valid"])
         self.assertFalse(bundle["offline_proof"]["consistency_checks"]["local_commit_matches_public_head"])
+        self.assertEqual(bundle["artifact_freshness"]["status"], "public_head_mismatch")
+        self.assertTrue(bundle["artifact_freshness"]["regeneration_required"])
         self.assertRegex(bundle["proof"]["bundle_hash"], r"^[a-f0-9]{64}$")
+
+    def test_artifact_freshness_flags_public_head_and_tracked_drift(self):
+        fresh = _build_artifact_freshness(
+            commit="abc123",
+            status_lines=["?? research/planner_notes/latest.md"],
+            tracked_status_lines=[],
+            public_repo_state={"head_commit": "abc123"},
+        )
+        stale = _build_artifact_freshness(
+            commit="abc123",
+            status_lines=[],
+            tracked_status_lines=[],
+            public_repo_state={"head_commit": "def456"},
+        )
+        tracked_dirty = _build_artifact_freshness(
+            commit="abc123",
+            status_lines=[" M README.md"],
+            tracked_status_lines=[" M README.md"],
+            public_repo_state={"head_commit": "abc123"},
+        )
+
+        self.assertEqual(fresh["status"], "fresh_public_head")
+        self.assertTrue(fresh["fresh_for_public_demo"])
+        self.assertTrue(fresh["untracked_files_present"])
+        self.assertFalse(fresh["tracked_files_dirty"])
+        self.assertEqual(stale["status"], "public_head_mismatch")
+        self.assertFalse(stale["fresh_for_public_demo"])
+        self.assertEqual(tracked_dirty["status"], "tracked_files_dirty")
+        self.assertFalse(tracked_dirty["fresh_for_public_demo"])
 
     def test_request_payload_validation_matches_service_schema(self):
         service_schema = json.loads(Path("service_schema.json").read_text(encoding="utf-8"))

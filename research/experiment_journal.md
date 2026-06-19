@@ -368,3 +368,66 @@ python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --repor
 ### Next action
 
 Commit and push the readiness-pack plus refreshed proof artifacts to `main`, then use `outputs/requester_demo.json` and `outputs/judge_bundle.json` as the default judge walkthrough until a credentialed session can capture one real CROO listing and paid-order proof chain.
+
+## 2026-06-19 Run - Daily Planner Refresh
+
+### Planner result
+
+- Kaggle competition page remains publicly reachable, and Kaggle CLI reports `croo-ai-agent-hackathon-10-k-usd-prize-pool` as open with deadline `2026-07-12 16:00:00`, reward `10,000 Usd`, `teamCount=3`, and `userHasEntered=True`.
+- Public GitHub state advanced again: local `HEAD`, `origin/main`, and public `git ls-remote` all resolve to `8983599c5c7e7be24ecf66627f74dadb9652e290` (`Tighten live-order readiness proof`).
+- Focused validation still passes: `python3 -m unittest discover -s tests -p 'test_*.py'` -> `Ran 10 tests in 0.278s ... OK`.
+- The latest executor work made `outputs/requester_demo.json` a stronger credential-gated readiness artifact, but `outputs/judge_bundle.json` still embeds public/local head `096a54fec07de51b1d3378707fab95b21f01c1ea`, so it is stale by one commit again.
+- CROO docs still reward the same judge story: CAP Order lifecycle proof, dashboard service registration, schema deliverables, SLA/price clarity, and A2A economic interactions.
+- DoraHacks direct page remains inaccessible from the shell path due to WAF/CAPTCHA (`HTTP 405`, `x-amzn-waf-action: captcha`), so actual BUIDL state is still unverified.
+
+### Planner decision
+
+The single best executor target for June 19, 2026 is to refresh `outputs/judge_bundle.json` to public head `8983599`, rerun focused tests and the evidence-bundle command, and record the refreshed bundle/report hashes for the demo package. If CROO credentials become available during executor work, pivot to the higher-upside live Agent Store listing plus one real paid-order capture; otherwise do not block on accounts, wallets, or DoraHacks submission.
+
+## 2026-06-19 Run - Public Artifact Freshness Guard
+
+### Chosen target
+
+Improve evidence capture by making `outputs/judge_bundle.json` explicitly say whether it was generated from the verified public `main` head with no tracked-file drift. This prevents the daily stale-bundle loop from being invisible to judges.
+
+### Exact changes
+
+- Added `artifact_freshness` to `trustbrief_agent/evidence_bundle.py` with public-head verification, tracked-dirty detection, untracked-file visibility, `fresh_for_public_demo`, and regeneration guidance.
+- Extended `repo_state` with `tracked_dirty`, `tracked_status_short`, and `untracked_status_short` so planner notes do not get confused with tracked source drift.
+- Added `fresh_for_public_demo` to the offline consistency checks.
+- Added unit coverage for fresh, stale-public-head, and tracked-dirty bundle states in `tests/test_trustbrief.py`.
+- Updated `README.md`, `DEMO_SCRIPT.md`, and `HACKATHON_SUBMISSION.md` so the judge walkthrough now points to `artifact_freshness.fresh_for_public_demo`.
+
+### Commands run
+
+```bash
+git status --short --branch
+GIT_TERMINAL_PROMPT=0 git ls-remote https://github.com/vandit98/croo-trustbrief-agent.git refs/heads/main
+python3 -m unittest discover -s tests -p 'test_*.py'
+python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --report-output outputs/demo_report.json --mock-output outputs/mock_cap_demo.json --requester-output outputs/requester_demo.json --public-repo-url https://github.com/vandit98/croo-trustbrief-agent --public-default-branch main --public-visibility public --public-head-commit 8983599c5c7e7be24ecf66627f74dadb9652e290 --public-head-url https://github.com/vandit98/croo-trustbrief-agent/commit/8983599c5c7e7be24ecf66627f74dadb9652e290 --public-verified-at 2026-06-19T00:00:00Z --public-verification-source "git ls-remote" --output outputs/judge_bundle.json
+jq '{generated_at, repo_commit:.repo_state.commit, tracked_dirty:.repo_state.tracked_dirty, status:.artifact_freshness.status, fresh:.artifact_freshness.fresh_for_public_demo, regeneration_required:.artifact_freshness.regeneration_required, bundle_hash:.proof.bundle_hash, report_hash:.proof.report_hash, tests_passed:.validation.tests.passed}' outputs/judge_bundle.json
+```
+
+### Results
+
+- Public `main` before editing was verified at `8983599c5c7e7be24ecf66627f74dadb9652e290`.
+- No CROO runtime credentials were present: `CROO_API_URL`, `CROO_WS_URL`, and `CROO_SDK_KEY` were missing, so no live provider or paid-order attempt was made.
+- `python3 -m unittest discover -s tests -p 'test_*.py'` -> `Ran 11 tests in 0.534s ... OK`.
+- Pre-commit bundle refresh succeeded:
+  - `generated_at=2026-06-19T06:15:31Z`
+  - `repo_state.commit=8983599c5c7e7be24ecf66627f74dadb9652e290`
+  - `artifact_freshness.status=tracked_files_dirty`
+  - `artifact_freshness.fresh_for_public_demo=false`
+  - `artifact_freshness.regeneration_required=true`
+  - `proof.bundle_hash=8afb476703f131fda263fc6c53d0d4aab53390ee122c25c39597767f1e7520da`
+  - `proof.report_hash=45c8d6a5a6b91d6cb7a924c4689628e7f588bfbd2d687d9e9a7175f60728ecf6`
+
+### Blockers
+
+- Live Agent Store proof remains blocked by missing CROO dashboard/API credentials and payment authorization.
+- DoraHacks filing remains a manual authenticated step.
+- The pre-commit bundle correctly reports tracked source drift; after this code/doc/journal commit lands, regenerate the ignored local `outputs/judge_bundle.json` against the new public head to get `fresh_for_public_demo=true`.
+
+### Next action
+
+Commit and push the freshness guard to `main`, then regenerate `outputs/judge_bundle.json` once more using the new public head so the local demo artifact is fresh for judge walkthroughs.

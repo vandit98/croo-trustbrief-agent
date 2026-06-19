@@ -81,6 +81,47 @@ def _capture_command(repo_root: Path, command: Sequence[str]) -> Dict[str, Any]:
     }
 
 
+def _build_artifact_freshness(
+    *,
+    commit: str,
+    status_lines: Sequence[str],
+    tracked_status_lines: Sequence[str],
+    public_repo_state: Dict[str, Any],
+) -> Dict[str, Any]:
+    public_head_commit = public_repo_state.get("head_commit", "")
+    public_head_verified = bool(public_head_commit)
+    local_matches_public = public_head_commit == commit if public_head_verified else None
+    tracked_files_dirty = bool(tracked_status_lines)
+    untracked_files_present = any(line.startswith("?? ") for line in status_lines)
+    fresh_for_public_demo = bool(local_matches_public) and not tracked_files_dirty
+
+    if not public_head_verified:
+        status = "public_head_unverified"
+        summary = "Public GitHub head was not supplied, so the bundle cannot prove it matches the judge-visible repo."
+    elif not local_matches_public:
+        status = "public_head_mismatch"
+        summary = "Regenerate after syncing to the verified public main head."
+    elif tracked_files_dirty:
+        status = "tracked_files_dirty"
+        summary = "Commit or discard tracked changes, then regenerate the bundle for a clean public-head artifact."
+    else:
+        status = "fresh_public_head"
+        summary = "Bundle was generated from the verified public head with no tracked-file drift."
+
+    return {
+        "status": status,
+        "summary": summary,
+        "public_head_verified": public_head_verified,
+        "public_head_commit": public_head_commit,
+        "local_commit": commit,
+        "local_commit_matches_public_head": local_matches_public,
+        "tracked_files_dirty": tracked_files_dirty,
+        "untracked_files_present": untracked_files_present,
+        "fresh_for_public_demo": fresh_for_public_demo,
+        "regeneration_required": not fresh_for_public_demo,
+    }
+
+
 def build_evidence_bundle(
     request_payload: Dict[str, Any],
     *,
@@ -108,10 +149,19 @@ def build_evidence_bundle(
     )
 
     status_lines = [line for line in _run_git(repo_root, "status", "--short").splitlines() if line.strip()]
+    tracked_status_lines = [
+        line for line in _run_git(repo_root, "status", "--short", "--untracked-files=no").splitlines() if line.strip()
+    ]
     branch = _run_git(repo_root, "rev-parse", "--abbrev-ref", "HEAD")
     commit = _run_git(repo_root, "rev-parse", "HEAD")
     remote_origin = _run_git(repo_root, "remote", "get-url", "origin")
     public_repo_state = dict(public_repo_state or {})
+    artifact_freshness = _build_artifact_freshness(
+        commit=commit,
+        status_lines=status_lines,
+        tracked_status_lines=tracked_status_lines,
+        public_repo_state=public_repo_state,
+    )
 
     key_assets = []
     for path in (service_schema_path, readme_path, demo_script_path, submission_path):
@@ -144,8 +194,12 @@ def build_evidence_bundle(
             "remote_origin": remote_origin,
             "dirty": bool(status_lines),
             "status_short": status_lines,
+            "tracked_dirty": bool(tracked_status_lines),
+            "tracked_status_short": tracked_status_lines,
+            "untracked_status_short": [line for line in status_lines if line.startswith("?? ")],
         },
         "public_repo_state": public_repo_state,
+        "artifact_freshness": artifact_freshness,
         "judge_assets": {
             "service_schema": _load_json(service_schema_path),
             "service_schema_sha256": sha256_text(service_schema_path.read_text(encoding="utf-8")),
@@ -171,9 +225,8 @@ def build_evidence_bundle(
             "consistency_checks": {
                 "report_hash_matches_transcript": report["proof"]["report_hash"] == cap_transcript["report_summary"]["report_hash"],
                 "source_bundle_hash_matches_transcript": report["proof"]["source_bundle_hash"] == cap_transcript["report_summary"]["source_bundle_hash"],
-                "local_commit_matches_public_head": (
-                    public_repo_state.get("head_commit", "") == commit if public_repo_state.get("head_commit") else None
-                ),
+                "local_commit_matches_public_head": artifact_freshness["local_commit_matches_public_head"],
+                "fresh_for_public_demo": artifact_freshness["fresh_for_public_demo"],
             },
         },
         "blocked_live_steps": [

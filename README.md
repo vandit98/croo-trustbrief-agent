@@ -56,7 +56,7 @@ python3 -m trustbrief_agent.evidence_bundle \
 Inspect `outputs/demo_report.json` for the report hash, source ledger, and claim assessments.
 Inspect `outputs/mock_cap_demo.json` for a judge-visible mock negotiation, order acceptance, delivery transcript, and report hash.
 Inspect `outputs/requester_demo.json` for request-schema validation, buyer-facing talking points, live-order gate checks, provider launch command, and the exact proof targets to capture once CROO credentials exist.
-Inspect `outputs/judge_bundle.json` for one bundled artifact that includes the report, mock CAP transcript, local git evidence, unit-test results, and hashes for the generated judge artifacts.
+Inspect `outputs/judge_bundle.json` for one bundled artifact that includes the report, mock CAP transcript, local git evidence, public-head freshness status, unit-test results, and hashes for the generated judge artifacts.
 
 ## Live CROO Provider
 
@@ -113,6 +113,7 @@ This makes the handoff between "judge sees the request" and "provider returns th
 - hashes of the freshly generated report and mock transcript artifacts
 - local git branch, commit, remote, and dirty-state evidence
 - optional public GitHub verification metadata plus a local-head vs public-head consistency check
+- `artifact_freshness.fresh_for_public_demo`, which is only true when the bundle was generated from the verified public head and no tracked files were dirty
 
 This makes it easier to attach one artifact to a demo folder or screen recording without claiming live CROO execution.
 

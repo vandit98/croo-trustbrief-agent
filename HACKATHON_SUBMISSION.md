@@ -31,7 +31,7 @@ TrustBrief is a CAP-callable provider agent. A requester submits a topic, claims
 - Agent Store service configuration is captured in `service_schema.json`.
 - Offline lifecycle proof is captured by `trustbrief_agent/mock_cap_harness.py`, which replays accept-and-deliver flow without CROO secrets.
 - Requester-side validation and live-order readiness proof are captured by `trustbrief_agent/requester_harness.py`, which checks the request against `service_schema.json` and emits gate checks, provider launch details, and the exact live proof artifacts still needed when credentials are absent.
-- Judge bundle proof is captured by `trustbrief_agent/evidence_bundle.py`, which packages the report, CAP transcript, service schema, local git evidence, and optional verified public GitHub head metadata into one artifact.
+- Judge bundle proof is captured by `trustbrief_agent/evidence_bundle.py`, which packages the report, CAP transcript, service schema, local git evidence, optional verified public GitHub head metadata, and explicit artifact freshness status into one artifact.
 
 ## Repository
 
@@ -60,8 +60,9 @@ License: MIT.
 3. Run `python3 -m trustbrief_agent.requester_harness examples/sample_request.json --output outputs/requester_demo.json`.
 4. Open `outputs/demo_report.json`, `outputs/mock_cap_demo.json`, `outputs/requester_demo.json`, and `outputs/judge_bundle.json`.
 5. Point to `claim_assessments`, `source_ledger`, `risk_flags`, `proof.report_hash`, the mock `negotiation_id` -> `order_id` -> `tx_hash` lifecycle, the requester-side schema validation, and the bundle's repo plus validation evidence.
-6. Show `trustbrief_agent/cap_provider.py` handling CROO negotiation and paid delivery.
-7. Once dashboard credentials exist, start live provider:
+6. Show `artifact_freshness.fresh_for_public_demo=true` before presenting the bundle as the current public artifact.
+7. Show `trustbrief_agent/cap_provider.py` handling CROO negotiation and paid delivery.
+8. Once dashboard credentials exist, start live provider:
 
    ```bash
    export CROO_API_URL="https://api.croo.network"
@@ -87,5 +88,5 @@ License: MIT.
 - Verifiable: every fetched source receives a SHA-256 ledger entry.
 - Robust demo: no paid API key is needed for the core report.
 - Buyer-visible request flow: the same payload is validated and packaged from the requester side before any live order attempt.
-- Judge-ready proof pack: one command refreshes the report, CAP transcript, test result, and artifact hashes.
+- Judge-ready proof pack: one command refreshes the report, CAP transcript, test result, artifact hashes, and public-head freshness status.
 - Optional LLM: model summary can be enabled, but the evidence report remains deterministic.
