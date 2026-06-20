@@ -7,5 +7,5 @@ __pycache__/
 venv/
 outputs/*.json
 outputs/*.log
+outputs/*.md
 .env
-

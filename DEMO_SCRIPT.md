@@ -29,10 +29,16 @@ python3 -m trustbrief_agent.evidence_bundle \
   --public-verified-at <verified-at-iso8601> \
   --public-verification-source "GitHub connector" \
   --output outputs/judge_bundle.json
+
+python3 -m trustbrief_agent.submission_package \
+  --bundle outputs/judge_bundle.json \
+  --output outputs/dorahacks_demo_package.md \
+  --json-output outputs/dorahacks_demo_package.json
 ```
 
 Open the report and show:
 
+- `dorahacks_demo_package.md` showing the BUIDL copy, 5-minute recording sequence, screenshot checklist, source/hash block, and credentialed live-proof slot
 - `recommendation`
 - `claim_assessments`
 - `source_ledger`

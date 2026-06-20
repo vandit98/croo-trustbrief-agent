@@ -11,6 +11,7 @@ from trustbrief_agent.core import analyze_request, evaluate_claim, load_source
 from trustbrief_agent.evidence_bundle import _build_artifact_freshness, build_evidence_bundle
 from trustbrief_agent.mock_cap_harness import run_mock_cap_flow
 from trustbrief_agent.requester_harness import build_requester_demo, validate_request_against_service_schema
+from trustbrief_agent.submission_package import build_submission_package, render_submission_markdown
 
 
 FIXED_NOW = dt.datetime(2026, 6, 13, 0, 0, tzinfo=dt.timezone.utc)
@@ -369,6 +370,118 @@ class TrustBriefTests(unittest.TestCase):
         self.assertIn("CROO_API_URL", packet["live_order_readiness"]["required_env"])
         self.assertIn("proof_targets", packet["live_order_readiness"])
         self.assertEqual(packet["live_order_readiness"]["provider_start"]["command"], "python3.10 -m trustbrief_agent.cap_provider")
+
+    def test_submission_package_builds_dorahacks_copy_from_bundle(self):
+        bundle = _submission_bundle_fixture()
+        package = build_submission_package(bundle, bundle_path=Path("outputs/judge_bundle.json"))
+
+        self.assertEqual(package["package_schema_version"], "1.0.0")
+        self.assertEqual(package["dorahacks_buidl_copy"]["project_name"], "TrustBrief CAP Verifier")
+        self.assertEqual(package["dorahacks_buidl_copy"]["live_proof_status"], "blocked_by_credentials")
+        self.assertTrue(package["source_bundle"]["fresh_for_public_demo"])
+        self.assertEqual(package["source_hash_block"]["public_head_commit"], "abc123")
+        self.assertTrue(package["source_hash_block"]["tests_passed"])
+        self.assertIn("paid_order_chain", package["credentialed_live_proof_slot"]["proof_targets"])
+        self.assertFalse(package["credentialed_live_proof_slot"]["ready_to_attempt"])
+
+    def test_submission_package_markdown_preserves_live_blockers(self):
+        package = build_submission_package(_submission_bundle_fixture())
+        rendered = render_submission_markdown(package)
+
+        self.assertIn("# DoraHacks Demo Package", rendered)
+        self.assertIn("TrustBrief CAP Verifier", rendered)
+        self.assertIn("Bundle freshness: fresh_public_head (fresh_for_public_demo=True)", rendered)
+        self.assertIn("Missing CROO runtime env vars", rendered)
+        self.assertIn("paid_order_chain", rendered)
+        self.assertNotIn("live paid order complete", rendered.lower())
+
+
+def _submission_bundle_fixture():
+    return {
+        "generated_at": "2026-06-20T00:00:00Z",
+        "repo_state": {
+            "commit": "abc123",
+            "remote_origin": "https://github.com/vandit98/croo-trustbrief-agent.git",
+        },
+        "public_repo_state": {
+            "repository_url": "https://github.com/vandit98/croo-trustbrief-agent",
+            "head_commit": "abc123",
+            "head_commit_url": "https://github.com/vandit98/croo-trustbrief-agent/commit/abc123",
+            "verified_at": "2026-06-20T00:00:00Z",
+        },
+        "artifact_freshness": {
+            "status": "fresh_public_head",
+            "fresh_for_public_demo": True,
+        },
+        "proof": {
+            "bundle_hash": "b" * 64,
+            "report_hash": "r" * 64,
+            "mock_tx_hash": "0xmockdelivery",
+        },
+        "judge_assets": {
+            "service_schema": {
+                "agent_store_listing": {
+                    "agent_name": "TrustBrief CAP Verifier",
+                    "tracks": ["Research & Intelligence Agents", "Data & Verification Agents"],
+                },
+                "service": {
+                    "service_name": "Verified Research Brief",
+                    "price_usdc": 1.0,
+                    "sla_minutes": 20,
+                    "deliverable_type": "schema",
+                },
+            },
+            "key_asset_hashes": [
+                {"path": "README.md", "sha256": "1" * 64},
+                {"path": "service_schema.json", "sha256": "2" * 64},
+            ],
+        },
+        "validation": {
+            "tests": {
+                "passed": True,
+            },
+        },
+        "offline_proof": {
+            "requester_demo": {
+                "request_fingerprint": {
+                    "input_hash": "a" * 64,
+                },
+                "offline_preview": {
+                    "report_summary": {
+                        "report_hash": "r" * 64,
+                    },
+                    "mock_cap_summary": {
+                        "order_id": "ord_mock_001",
+                        "tx_hash": "0xmockdelivery",
+                    },
+                },
+                "live_order_readiness": {
+                    "ready_to_attempt": False,
+                    "gate_checks": {
+                        "request_schema_valid": True,
+                        "service_listing_ready": True,
+                        "required_env_present": False,
+                    },
+                    "required_env": {
+                        "CROO_API_URL": False,
+                        "CROO_WS_URL": False,
+                        "CROO_SDK_KEY": False,
+                    },
+                    "blocked_reasons": [
+                        "Missing CROO runtime env vars: CROO_API_URL, CROO_WS_URL, CROO_SDK_KEY.",
+                    ],
+                    "proof_targets": [
+                        {"artifact": "agent_store_listing"},
+                        {"artifact": "paid_order_chain"},
+                        {"artifact": "delivered_report_hash"},
+                    ],
+                    "manual_steps": [
+                        "Register the provider in the CROO Agent Store dashboard and paste service_schema.json.",
+                    ],
+                },
+            },
+        },
+    }
 
 
 if __name__ == "__main__":

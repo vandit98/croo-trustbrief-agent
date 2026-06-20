@@ -33,6 +33,10 @@ python3 -m trustbrief_agent.cli examples/sample_request.json --output outputs/de
 python3 -m trustbrief_agent.mock_cap_harness examples/sample_request.json --output outputs/mock_cap_demo.json
 python3 -m trustbrief_agent.requester_harness examples/sample_request.json --output outputs/requester_demo.json
 python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --output outputs/judge_bundle.json
+python3 -m trustbrief_agent.submission_package \
+  --bundle outputs/judge_bundle.json \
+  --output outputs/dorahacks_demo_package.md \
+  --json-output outputs/dorahacks_demo_package.json
 ```
 
 Or refresh the full judge pack in one command:
@@ -57,6 +61,7 @@ Inspect `outputs/demo_report.json` for the report hash, source ledger, and claim
 Inspect `outputs/mock_cap_demo.json` for a judge-visible mock negotiation, order acceptance, delivery transcript, and report hash.
 Inspect `outputs/requester_demo.json` for request-schema validation, buyer-facing talking points, live-order gate checks, provider launch command, and the exact proof targets to capture once CROO credentials exist.
 Inspect `outputs/judge_bundle.json` for one bundled artifact that includes the report, mock CAP transcript, local git evidence, public-head freshness status, unit-test results, and hashes for the generated judge artifacts.
+Inspect `outputs/dorahacks_demo_package.md` for paste-ready BUIDL copy, a 5-minute recording runbook, screenshot checklist, source/hash block, and the credentialed live-proof slot that remains blocked until CROO dashboard/payment credentials exist.
 
 ## Live CROO Provider
 
@@ -116,6 +121,27 @@ This makes the handoff between "judge sees the request" and "provider returns th
 - `artifact_freshness.fresh_for_public_demo`, which is only true when the bundle was generated from the verified public head and no tracked files were dirty
 
 This makes it easier to attach one artifact to a demo folder or screen recording without claiming live CROO execution.
+
+## DoraHacks Demo Package
+
+`trustbrief_agent/submission_package.py` turns the judge bundle into the final submission-facing material:
+
+- BUIDL copy for DoraHacks fields
+- 5-minute demo runbook
+- screenshot checklist
+- source and hash block for the public repo, bundle, request, and report
+- credentialed live-proof slot with the exact blocked reasons and proof targets
+
+Generate it after `outputs/judge_bundle.json` is fresh:
+
+```bash
+python3 -m trustbrief_agent.submission_package \
+  --bundle outputs/judge_bundle.json \
+  --output outputs/dorahacks_demo_package.md \
+  --json-output outputs/dorahacks_demo_package.json
+```
+
+The package is intentionally generated from evidence already present in `outputs/judge_bundle.json`; it does not submit to DoraHacks, perform wallet actions, or claim a live CROO paid order.
 
 ## Agent Store Service Setup
 

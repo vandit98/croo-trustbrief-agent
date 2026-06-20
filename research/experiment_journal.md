@@ -431,3 +431,68 @@ jq '{generated_at, repo_commit:.repo_state.commit, tracked_dirty:.repo_state.tra
 ### Next action
 
 Commit and push the freshness guard to `main`, then regenerate `outputs/judge_bundle.json` once more using the new public head so the local demo artifact is fresh for judge walkthroughs.
+
+## 2026-06-20 Run - Daily Planner Refresh
+
+### Planner result
+
+- Kaggle remains open for `croo-ai-agent-hackathon-10-k-usd-prize-pool`: `/Users/vandit/.pyenv/shims/kaggle competitions list -s croo` reports deadline `2026-07-12 16:00:00`, reward `10,000 Usd`, `teamCount=4`, and `userHasEntered=True`.
+- Kaggle submissions for this account are still empty (`No submissions found`), and the only competition file is `NOTE.md`, which says this hackathon has no provided dataset.
+- Public repo state is current: local `HEAD`, local `origin/main`, and public `git ls-remote` all resolve to `6264e8b5f7254867620073264857563ab400304d` (`Add public artifact freshness guard`).
+- The post-commit bundle regeneration has already happened: `outputs/judge_bundle.json` now has `artifact_freshness.status=fresh_public_head`, `fresh_for_public_demo=true`, `regeneration_required=false`, bundle hash `616282a351d2806c09a55d1f0ba11acc7053487023c16a6c53a192ab59d0a044`, and report hash `96b310486720c6d2c795295dd6c2ee6560013490ed1fd63531f620f53cd0fa58`.
+- Focused validation still passes: `python3 -m unittest discover -s tests -p 'test_*.py'` -> `Ran 11 tests in 0.271s ... OK`.
+- DoraHacks direct fetch remains blocked by WAF/CAPTCHA (`HTTP 405`, `x-amzn-waf-action: captcha`), so actual BUIDL state remains unverified.
+
+### Planner decision
+
+The single best no-credential executor target for June 20, 2026 is to prepare the DoraHacks-ready judge demo package anchored on the already-fresh `outputs/judge_bundle.json`: 5-minute demo runbook, screenshot checklist, BUIDL copy, source/hash block, and a clear credentialed-live-proof placeholder. If CROO credentials and payment authorization are available at executor start, supersede this with the higher-upside live Agent Store listing plus one real paid-order capture.
+
+## 2026-06-20 Run - DoraHacks Demo Package Generator
+
+### Chosen target
+
+Prepare a reproducible DoraHacks-ready judge demo package from the existing judge bundle, instead of hand-maintaining BUIDL copy and screenshot steps or attempting credential-gated CROO/DoraHacks actions.
+
+### Exact changes
+
+- Added `trustbrief_agent/submission_package.py`, which reads `outputs/judge_bundle.json` and emits BUIDL copy, a 5-minute recording runbook, screenshot checklist, source/hash block, and credentialed live-proof slot.
+- Added unit coverage proving the package preserves `blocked_by_credentials` state and carries `paid_order_chain` as a future live proof target.
+- Updated `README.md`, `DEMO_SCRIPT.md`, and `HACKATHON_SUBMISSION.md` with the new generator command and output role.
+- Added `outputs/*.md` to `.gitignore` so generated demo Markdown stays local like the existing JSON/log artifacts.
+
+### Commands run
+
+```bash
+git status --short --branch
+GIT_TERMINAL_PROMPT=0 git ls-remote https://github.com/vandit98/croo-trustbrief-agent.git refs/heads/main
+env | rg '^(CROO_|TRUSTBRIEF_|OPENAI_API_KEY=)'
+python3 -m unittest discover -s tests -p 'test_*.py'
+python3 -m trustbrief_agent.submission_package --bundle outputs/judge_bundle.json --output outputs/dorahacks_demo_package.md --json-output outputs/dorahacks_demo_package.json
+python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --report-output outputs/demo_report.json --mock-output outputs/mock_cap_demo.json --requester-output outputs/requester_demo.json --public-repo-url https://github.com/vandit98/croo-trustbrief-agent --public-default-branch main --public-visibility public --public-head-commit 6264e8b5f7254867620073264857563ab400304d --public-head-url https://github.com/vandit98/croo-trustbrief-agent/commit/6264e8b5f7254867620073264857563ab400304d --public-verified-at 2026-06-20T00:00:00Z --public-verification-source git-ls-remote --output outputs/judge_bundle.json
+python3 -m trustbrief_agent.submission_package --bundle outputs/judge_bundle.json --output outputs/dorahacks_demo_package.md --json-output outputs/dorahacks_demo_package.json
+```
+
+### Results
+
+- Public `main` before editing was verified at `6264e8b5f7254867620073264857563ab400304d`.
+- No `CROO_*`, `TRUSTBRIEF_*`, or `OPENAI_API_KEY` environment variables were present in this shell, so no live provider, wallet/payment, Agent Store listing, or DoraHacks submission action was attempted.
+- `python3 -m unittest discover -s tests -p 'test_*.py'` -> `Ran 13 tests in 2.604s ... OK`.
+- `python3 -m trustbrief_agent.submission_package ...` generated ignored local `outputs/dorahacks_demo_package.md` and `outputs/dorahacks_demo_package.json`; the package reports `live_proof_status=blocked_by_credentials` and proof targets `agent_store_listing, provider_online_state, paid_order_chain, delivered_report_hash, request_payload_fingerprint`.
+- Pre-commit bundle refresh succeeded and correctly reported tracked source drift:
+  - `generated_at=2026-06-20T05:44:17Z`
+  - `artifact_freshness.status=tracked_files_dirty`
+  - `artifact_freshness.fresh_for_public_demo=false`
+  - `artifact_freshness.regeneration_required=true`
+  - `validation.tests.passed=true`
+  - `proof.bundle_hash=2619211e2e43ef71ff672809534f7cfa80c3f20de0838c40363f2cd4ff860ec1`
+  - `proof.report_hash=2867fcc7c16607bee625be96b284f8859a6fe53a4e572972702632e2ede32c74`
+
+### Blockers
+
+- Live CROO proof remains blocked by missing dashboard/API credentials, requester credentials, service ID, and payment authorization.
+- DoraHacks filing remains blocked by manual login/human verification.
+- The pre-commit bundle is intentionally not fresh for public demo until this commit is pushed and the ignored local bundle/package are regenerated against the new public head.
+
+### Next action
+
+Commit and push the demo-package generator to `main`, then regenerate `outputs/judge_bundle.json` and `outputs/dorahacks_demo_package.md` against the new public head so the local recording package is fresh.
