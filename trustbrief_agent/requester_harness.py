@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import datetime as dt
 import json
 import os
 from pathlib import Path
@@ -170,14 +171,15 @@ def build_requester_demo(
     *,
     request_path: Optional[Path] = None,
     service_schema_path: Optional[Path] = None,
+    analysis_now: Optional[dt.datetime] = None,
 ) -> Dict[str, Any]:
     repo_root = Path(__file__).resolve().parents[1]
     service_schema_path = service_schema_path or (repo_root / "service_schema.json")
     service_schema = _read_json(service_schema_path)
     validation = validate_request_against_service_schema(request_payload, service_schema)
     service_readiness = _service_readiness(service_schema)
-    report = analyze_request(request_payload, use_openai=False)
-    mock_transcript = asyncio.run(run_mock_cap_flow(request_payload, deliver_mode="schema"))
+    report = analyze_request(request_payload, now=analysis_now, use_openai=False)
+    mock_transcript = asyncio.run(run_mock_cap_flow(request_payload, deliver_mode="schema", analysis_now=analysis_now))
 
     live_env = _env_status(["CROO_API_URL", "CROO_WS_URL", "CROO_SDK_KEY"])
     openai_env = _env_status(["OPENAI_API_KEY"])

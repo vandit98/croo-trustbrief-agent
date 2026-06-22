@@ -6,6 +6,7 @@ import unittest
 from dataclasses import dataclass
 from pathlib import Path
 
+from trustbrief_agent.buyer_composability import build_buyer_composability_packet
 from trustbrief_agent.cap_provider import build_delivery_request, handle_negotiation_created, handle_order_paid
 from trustbrief_agent.core import analyze_request, evaluate_claim, load_source
 from trustbrief_agent.evidence_bundle import _build_artifact_freshness, build_evidence_bundle
@@ -281,7 +282,13 @@ class TrustBriefTests(unittest.TestCase):
         self.assertTrue(bundle["judge_assets"]["generated_artifact_hashes"][0]["path"].endswith("test_demo_report.json"))
         self.assertTrue(bundle["offline_proof"]["consistency_checks"]["report_hash_matches_transcript"])
         self.assertTrue(bundle["offline_proof"]["consistency_checks"]["source_bundle_hash_matches_transcript"])
+        self.assertTrue(bundle["offline_proof"]["consistency_checks"]["buyer_report_hash_matches_report"])
+        self.assertTrue(bundle["offline_proof"]["consistency_checks"]["buyer_request_hash_matches_report_input"])
         self.assertTrue(bundle["offline_proof"]["requester_demo"]["schema_validation"]["valid"])
+        self.assertEqual(
+            bundle["offline_proof"]["buyer_composability"]["downstream_decision"]["decision"],
+            "manual_review_before_payment",
+        )
         self.assertFalse(bundle["offline_proof"]["consistency_checks"]["local_commit_matches_public_head"])
         self.assertEqual(bundle["artifact_freshness"]["status"], "public_head_mismatch")
         self.assertTrue(bundle["artifact_freshness"]["regeneration_required"])
@@ -371,6 +378,36 @@ class TrustBriefTests(unittest.TestCase):
         self.assertIn("proof_targets", packet["live_order_readiness"])
         self.assertEqual(packet["live_order_readiness"]["provider_start"]["command"], "python3.10 -m trustbrief_agent.cap_provider")
 
+    def test_buyer_composability_packet_gates_downstream_purchase(self):
+        packet = build_buyer_composability_packet(
+            {
+                "task": "Verify buyer-facing CROO claims.",
+                "subject": "TrustBrief buyer gate",
+                "claims": [
+                    "TrustBrief returns a report hash with evidence-backed claim assessments.",
+                    "TrustBrief has already completed a live CROO paid order.",
+                ],
+                "sources": [
+                    {
+                        "label": "fixture",
+                        "text": "TrustBrief returns a report hash, evidence-backed claim assessments, and source hashes.",
+                    }
+                ],
+            },
+            request_path=Path("examples/sample_request.json"),
+        )
+
+        self.assertEqual(packet["buyer_composability_schema_version"], "1.0.0")
+        self.assertRegex(packet["correlation"]["correlation_id"], r"^tb-a2a-[a-f0-9]{16}$")
+        self.assertRegex(packet["correlation"]["request_input_hash"], r"^[a-f0-9]{64}$")
+        self.assertRegex(packet["correlation"]["report_input_hash"], r"^[a-f0-9]{64}$")
+        self.assertRegex(packet["correlation"]["trustbrief_report_hash"], r"^[a-f0-9]{64}$")
+        self.assertEqual(packet["correlation"]["mock_order_id"], "ord_mock_001")
+        self.assertEqual(packet["downstream_decision"]["decision"], "hold_downstream_purchase")
+        self.assertEqual(packet["live_cap_placeholders"]["payment_state"], "not_attempted")
+        self.assertTrue(packet["live_cap_placeholders"]["no_wallet_action_performed"])
+        self.assertIn("Missing CROO runtime env vars", " ".join(packet["live_cap_placeholders"]["blocked_reasons"]))
+
     def test_submission_package_builds_dorahacks_copy_from_bundle(self):
         bundle = _submission_bundle_fixture()
         package = build_submission_package(bundle, bundle_path=Path("outputs/judge_bundle.json"))
@@ -382,6 +419,7 @@ class TrustBriefTests(unittest.TestCase):
         self.assertEqual(package["source_hash_block"]["public_head_commit"], "abc123")
         self.assertTrue(package["source_hash_block"]["tests_passed"])
         self.assertIn("paid_order_chain", package["credentialed_live_proof_slot"]["proof_targets"])
+        self.assertEqual(package["a2a_buyer_composability"]["downstream_decision"], "hold_downstream_purchase")
         self.assertFalse(package["credentialed_live_proof_slot"]["ready_to_attempt"])
 
     def test_submission_package_markdown_preserves_live_blockers(self):
@@ -391,6 +429,7 @@ class TrustBriefTests(unittest.TestCase):
         self.assertIn("# DoraHacks Demo Package", rendered)
         self.assertIn("TrustBrief CAP Verifier", rendered)
         self.assertIn("Bundle freshness: fresh_public_head (fresh_for_public_demo=True)", rendered)
+        self.assertIn("A2A Buyer Composability", rendered)
         self.assertIn("Missing CROO runtime env vars", rendered)
         self.assertIn("paid_order_chain", rendered)
         self.assertNotIn("live paid order complete", rendered.lower())
@@ -442,6 +481,28 @@ def _submission_bundle_fixture():
             },
         },
         "offline_proof": {
+            "buyer_composability": {
+                "correlation": {
+                    "correlation_id": "tb-a2a-1234567890abcdef",
+                    "request_input_hash": "a" * 64,
+                    "report_input_hash": "a" * 64,
+                    "trustbrief_report_hash": "r" * 64,
+                    "mock_order_id": "ord_mock_001",
+                    "mock_delivery_tx_hash": "0xmockdelivery",
+                },
+                "actors": {
+                    "buyer_agent": "ProcurementRiskBuyer",
+                    "downstream_service": "Vendor procurement step",
+                },
+                "downstream_decision": {
+                    "decision": "hold_downstream_purchase",
+                    "reason": "TrustBrief did not clear the target for autonomous spend.",
+                },
+                "live_cap_placeholders": {
+                    "payment_state": "not_attempted",
+                    "no_wallet_action_performed": True,
+                },
+            },
             "requester_demo": {
                 "request_fingerprint": {
                     "input_hash": "a" * 64,

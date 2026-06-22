@@ -8,6 +8,7 @@ import subprocess
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Sequence
 
+from .buyer_composability import build_buyer_composability_packet
 from .core import analyze_request, canonical_json, sha256_text
 from .mock_cap_harness import run_mock_cap_flow
 from .requester_harness import build_requester_demo
@@ -175,6 +176,20 @@ def build_evidence_bundle(
         if resolved.exists():
             generated_artifacts.append(_file_artifact(resolved, repo_root))
 
+    requester_demo = build_requester_demo(
+        request_payload,
+        request_path=request_path,
+        service_schema_path=service_schema_path,
+        analysis_now=analysis_now,
+    )
+    buyer_composability = build_buyer_composability_packet(
+        request_payload,
+        request_path=request_path,
+        requester_demo=requester_demo,
+        service_schema_path=service_schema_path,
+        analysis_now=analysis_now,
+    )
+
     bundle: Dict[str, Any] = {
         "bundle_schema_version": "1.0.0",
         "generated_at": now_iso,
@@ -211,20 +226,20 @@ def build_evidence_bundle(
             "report_demo": "python3 -m trustbrief_agent.cli examples/sample_request.json --output outputs/demo_report.json",
             "mock_cap_demo": "python3 -m trustbrief_agent.mock_cap_harness examples/sample_request.json --output outputs/mock_cap_demo.json",
             "requester_demo": "python3 -m trustbrief_agent.requester_harness examples/sample_request.json --output outputs/requester_demo.json",
+            "buyer_composability_demo": "python3 -m trustbrief_agent.buyer_composability examples/sample_request.json --output outputs/buyer_composability_demo.json",
             "judge_bundle": "python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --output outputs/judge_bundle.json",
         },
         "validation": validation_results or {},
         "offline_proof": {
             "report": report,
             "mock_cap_transcript": cap_transcript,
-            "requester_demo": build_requester_demo(
-                request_payload,
-                request_path=request_path,
-                service_schema_path=service_schema_path,
-            ),
+            "requester_demo": requester_demo,
+            "buyer_composability": buyer_composability,
             "consistency_checks": {
                 "report_hash_matches_transcript": report["proof"]["report_hash"] == cap_transcript["report_summary"]["report_hash"],
                 "source_bundle_hash_matches_transcript": report["proof"]["source_bundle_hash"] == cap_transcript["report_summary"]["source_bundle_hash"],
+                "buyer_report_hash_matches_report": buyer_composability["correlation"]["trustbrief_report_hash"] == report["proof"]["report_hash"],
+                "buyer_request_hash_matches_report_input": buyer_composability["correlation"]["report_input_hash"] == report["proof"]["input_hash"],
                 "local_commit_matches_public_head": artifact_freshness["local_commit_matches_public_head"],
                 "fresh_for_public_demo": artifact_freshness["fresh_for_public_demo"],
             },
@@ -258,6 +273,7 @@ def main() -> int:
     parser.add_argument("--report-output", help="Optional path to also write the deterministic report JSON.")
     parser.add_argument("--mock-output", help="Optional path to also write the mock CAP transcript JSON.")
     parser.add_argument("--requester-output", help="Optional path to also write the requester demo JSON.")
+    parser.add_argument("--buyer-output", help="Optional path to also write the A2A buyer-composability JSON.")
     parser.add_argument("--public-repo-url", help="Optional verified public repository URL.")
     parser.add_argument("--public-default-branch", help="Optional verified public default branch.")
     parser.add_argument("--public-visibility", help="Optional verified public repository visibility.")
@@ -290,9 +306,20 @@ def main() -> int:
         generated_paths.append(mock_output_path)
     if args.requester_output:
         requester_output_path = Path(args.requester_output)
-        requester_demo = build_requester_demo(payload, request_path=request_path)
+        requester_demo = build_requester_demo(payload, request_path=request_path, analysis_now=analysis_now)
         _write_json(requester_output_path, requester_demo)
         generated_paths.append(requester_output_path)
+    if args.buyer_output:
+        buyer_output_path = Path(args.buyer_output)
+        requester_demo = build_requester_demo(payload, request_path=request_path, analysis_now=analysis_now)
+        buyer_packet = build_buyer_composability_packet(
+            payload,
+            request_path=request_path,
+            requester_demo=requester_demo,
+            analysis_now=analysis_now,
+        )
+        _write_json(buyer_output_path, buyer_packet)
+        generated_paths.append(buyer_output_path)
 
     validation_results = {}
     if not args.skip_tests:

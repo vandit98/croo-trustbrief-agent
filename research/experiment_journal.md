@@ -496,3 +496,76 @@ python3 -m trustbrief_agent.submission_package --bundle outputs/judge_bundle.jso
 ### Next action
 
 Commit and push the demo-package generator to `main`, then regenerate `outputs/judge_bundle.json` and `outputs/dorahacks_demo_package.md` against the new public head so the local recording package is fresh.
+
+## 2026-06-22 Run - Daily Planner Refresh
+
+### Planner result
+
+- Kaggle remains open for `croo-ai-agent-hackathon-10-k-usd-prize-pool`: `/Users/vandit/.pyenv/shims/kaggle competitions list -s croo` reports deadline `2026-07-12 16:00:00`, reward `10,000 Usd`, `teamCount=5`, and `userHasEntered=True`.
+- Kaggle submissions are still empty (`No submissions found`), and the only file is `NOTE.md`, downloaded and confirmed as: "Welcome! This is a Hackathon with no provided dataset."
+- Public GitHub state is current: local `HEAD`, local `origin/main`, and public `git ls-remote` all resolve to `1518f78e38d9e8e587ab327e47d547c1134ad6db` (`Add DoraHacks demo package generator`).
+- `outputs/judge_bundle.json` is fresh for public demo at `1518f78`, with `artifact_freshness.status=fresh_public_head`, `fresh_for_public_demo=true`, bundle hash `8b5af4f32e6c8e88db41d0aeb9be1b3cc22622e46a6755a427c87b643a5af50f`, and report hash `6f014c9b2655d0582a25c74965baa81304da291d76f22ce5d28410b0977d9625`.
+- `outputs/dorahacks_demo_package.md` exists and is fresh for the current bundle, but still reports `live_proof_status=blocked_by_credentials`.
+- Focused validation still passes: `python3 -m unittest discover -s tests -p 'test_*.py'` -> `Ran 13 tests in 0.277s ... OK`.
+- DoraHacks direct verification remains blocked by WAF/CAPTCHA (`HTTP 405`, `x-amzn-waf-action: captcha`), so actual BUIDL state remains unverified.
+
+### Planner decision
+
+The highest-upside target remains a real CROO Agent Store listing plus one paid order proof chain if credentials, requester funding, and payment authorization are available. Without those credentials, the best unblocked executor target for June 22, 2026 is to add a narrow A2A buyer-composability proof packet and integrate it into the judge bundle/demo package: buyer/requester agent -> TrustBrief pre-spend verification -> downstream purchase decision, with correlation IDs, report hash, payment-state placeholders, and reserved live CAP IDs/tx fields.
+
+## 2026-06-22 Run - A2A Buyer Composability Proof
+
+### Chosen target
+
+Add a narrow A2A buyer-composability proof packet because live CROO Agent Store, wallet/payment, and DoraHacks submission actions remain credential-gated. The goal is to show TrustBrief as a pre-spend verification dependency inside a buyer-agent workflow, not only as a standalone offline report.
+
+### Exact changes
+
+- Added `trustbrief_agent/buyer_composability.py`, which builds `outputs/buyer_composability_demo.json` with a deterministic buyer correlation ID, exact request hash, sanitized report input hash, TrustBrief report hash, mock CAP order IDs, downstream purchase decision, and empty live CAP/payment placeholders.
+- Threaded the buyer packet into `trustbrief_agent/evidence_bundle.py` with a `--buyer-output` CLI option, generated-artifact hashing, and consistency checks tying the buyer report/input hashes back to the bundle report.
+- Extended `trustbrief_agent/submission_package.py` so generated DoraHacks material includes an A2A Buyer Composability section plus buyer correlation and downstream decision fields in the source/hash block.
+- Updated `service_schema.json`, `README.md`, `DEMO_SCRIPT.md`, and `HACKATHON_SUBMISSION.md` so the Agent Store copy and demo flow describe pre-spend buyer-agent verification.
+- Added focused tests for buyer packet generation, bundle consistency, and rendered submission-package output.
+
+### Commands run
+
+```bash
+git status --short --branch
+GIT_TERMINAL_PROMPT=0 git ls-remote https://github.com/vandit98/croo-trustbrief-agent.git refs/heads/main
+/Users/vandit/.pyenv/shims/kaggle competitions list -s croo
+/Users/vandit/.pyenv/shims/kaggle competitions submissions croo-ai-agent-hackathon-10-k-usd-prize-pool
+/Users/vandit/.pyenv/shims/kaggle competitions files croo-ai-agent-hackathon-10-k-usd-prize-pool
+env | rg '^(CROO|TRUSTBRIEF|OPENAI|KAGGLE)_'
+python3 -m unittest discover -s tests -p 'test_*.py'
+python3 -m trustbrief_agent.buyer_composability examples/sample_request.json --output outputs/buyer_composability_demo.json
+python3 -m trustbrief_agent.requester_harness examples/sample_request.json --output outputs/requester_demo.json
+python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --report-output outputs/demo_report.json --mock-output outputs/mock_cap_demo.json --requester-output outputs/requester_demo.json --buyer-output outputs/buyer_composability_demo.json --public-repo-url https://github.com/vandit98/croo-trustbrief-agent --public-default-branch main --public-visibility public --public-head-commit 1518f78e38d9e8e587ab327e47d547c1134ad6db --public-head-url https://github.com/vandit98/croo-trustbrief-agent/commit/1518f78e38d9e8e587ab327e47d547c1134ad6db --public-verified-at 2026-06-22T05:45:37Z --public-verification-source "git ls-remote" --output outputs/judge_bundle.json
+python3 -m trustbrief_agent.submission_package --bundle outputs/judge_bundle.json --output outputs/dorahacks_demo_package.md --json-output outputs/dorahacks_demo_package.json
+```
+
+### Results
+
+- Public `main` before editing was verified at `1518f78e38d9e8e587ab327e47d547c1134ad6db`.
+- Kaggle remains open with deadline `2026-07-12 16:00:00`, reward `10,000 Usd`, `teamCount=5`, and `userHasEntered=True`; submissions still report `No submissions found`; competition files still only list `NOTE.md`.
+- No `CROO_*`, `TRUSTBRIEF_*`, `OPENAI_*`, or `KAGGLE_*` environment variables were printed by the env check, so no live provider, wallet/payment, Agent Store, or DoraHacks write action was attempted.
+- First unit run found and fixed a buyer/report hash drift caused by recomputing requester proof at a different timestamp. The final validation passed: `python3 -m unittest discover -s tests -p 'test_*.py'` -> `Ran 14 tests in 0.281s ... OK`.
+- `outputs/buyer_composability_demo.json` generated locally with `buyer_composability_schema_version=1.0.0`, `correlation.correlation_id=tb-a2a-ab81cabb7aeac322`, `downstream_decision.decision=hold_downstream_purchase`, `live_cap_placeholders.payment_state=not_attempted`, and `no_wallet_action_performed=true`.
+- Pre-commit bundle refresh succeeded and correctly reported tracked source drift:
+  - `artifact_freshness.status=tracked_files_dirty`
+  - `artifact_freshness.fresh_for_public_demo=false`
+  - `validation.tests.passed=true`
+  - `proof.bundle_hash=03737538608bfa4d8067e4f543ced5690a38b9d82b2736425972d29920d968dd`
+  - `proof.report_hash=142ba03b22941147792924612aba73756f51966aa677902323ffb3653a353ab0`
+  - `offline_proof.buyer_composability.downstream_decision.decision=hold_downstream_purchase`
+  - `offline_proof.consistency_checks.buyer_report_hash_matches_report=true`
+- `outputs/dorahacks_demo_package.md/json` regenerated locally and now includes the `A2A Buyer Composability` section, buyer correlation ID, downstream decision, and live proof status `blocked_by_credentials`.
+
+### Blockers
+
+- Live CROO proof remains blocked by missing dashboard/API credentials, provider SDK key, requester SDK key, service ID, requester funding, and explicit payment authorization.
+- DoraHacks filing remains blocked by manual login/human verification.
+- The pre-commit generated bundle is intentionally not fresh for public demo until the commit is pushed and ignored local artifacts are regenerated against the new public head.
+
+### Next action
+
+Commit and push the buyer-composability proof to `main`, then regenerate `outputs/judge_bundle.json`, `outputs/buyer_composability_demo.json`, and `outputs/dorahacks_demo_package.md` with the new public head. If CROO credentials and payment authorization become available, supersede further offline packaging with one real Agent Store listing plus paid-order proof chain.

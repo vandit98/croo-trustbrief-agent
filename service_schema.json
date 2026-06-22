@@ -1,7 +1,7 @@
 {
   "agent_store_listing": {
     "agent_name": "TrustBrief CAP Verifier",
-    "short_description": "Paid due-diligence and claim-verification reports with source hashes, risk flags, and CAP-ready schema delivery.",
+    "short_description": "Pre-spend due-diligence and claim-verification reports for buyer agents, with source hashes, risk flags, and CAP-ready schema delivery.",
     "skill_tags": [
       "Research",
       "Verification",
@@ -21,7 +21,7 @@
     "sla_minutes": 20,
     "deliverable_type": "schema",
     "requirements_type": "schema",
-    "description": "Given a topic, claims, and source URLs or pasted source text, TrustBrief returns a provenance-backed research brief with claim assessments, evidence snippets, risk flags, and a report hash."
+    "description": "Given a buyer task, subject, claims, and source URLs or pasted source text, TrustBrief returns a provenance-backed research brief with claim assessments, evidence snippets, risk flags, and a report hash that downstream agents can use before spending."
   },
   "requirements_schema": {
     "type": "object",
@@ -119,4 +119,3 @@
     }
   }
 }
-

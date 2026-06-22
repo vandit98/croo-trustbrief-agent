@@ -62,6 +62,10 @@ def build_submission_package(bundle: Dict[str, Any], *, bundle_path: Optional[Pa
     proof = _require_dict(bundle, "proof")
     offline_proof = _require_dict(bundle, "offline_proof")
     requester_demo = _require_dict(offline_proof, "requester_demo")
+    buyer_composability = _require_dict(offline_proof, "buyer_composability")
+    buyer_correlation = _require_dict(buyer_composability, "correlation")
+    buyer_decision = _require_dict(buyer_composability, "downstream_decision")
+    buyer_actors = _require_dict(buyer_composability, "actors")
     readiness = _require_dict(requester_demo, "live_order_readiness")
     gate_checks = _require_dict(readiness, "gate_checks")
     required_env = _require_dict(readiness, "required_env")
@@ -146,8 +150,8 @@ def build_submission_package(bundle: Dict[str, Any], *, bundle_path: Optional[Pa
             },
             {
                 "time": "4:20-5:00",
-                "screen": "outputs/requester_demo.json",
-                "show": "Live-order gate checks, missing credentials if any, and exact artifacts to capture after dashboard access.",
+                "screen": "outputs/requester_demo.json and outputs/buyer_composability_demo.json",
+                "show": "Live-order gate checks, buyer-agent correlation ID, downstream purchase gate, and exact live proof fields.",
             },
         ],
         "screenshot_checklist": [
@@ -176,6 +180,11 @@ def build_submission_package(bundle: Dict[str, Any], *, bundle_path: Optional[Pa
                 "capture": "Agent Store listing URL, provider-online log, real negotiation_id, order_id, tx_hash, and delivered report hash.",
                 "status": "blocked_by_credentials" if blocked_reasons else "ready_to_capture",
             },
+            {
+                "artifact": "a2a_buyer_composability",
+                "capture": "Correlation ID, TrustBrief report hash, buyer decision, and reserved live CAP/payment fields.",
+                "status": "ready" if buyer_correlation.get("correlation_id") else "missing_buyer_packet",
+            },
         ],
         "source_hash_block": {
             "repository_url": repo_url,
@@ -187,8 +196,20 @@ def build_submission_package(bundle: Dict[str, Any], *, bundle_path: Optional[Pa
             "report_hash": proof.get("report_hash") or report_summary.get("report_hash", ""),
             "mock_tx_hash": proof.get("mock_tx_hash") or mock_cap_summary.get("tx_hash", ""),
             "request_input_hash": request_fingerprint.get("input_hash", ""),
+            "buyer_correlation_id": buyer_correlation.get("correlation_id", ""),
+            "buyer_downstream_decision": buyer_decision.get("decision", ""),
             "key_asset_hashes": _key_asset_lines(judge_assets.get("key_asset_hashes", []) or []),
             "tests_passed": test_result.get("passed"),
+        },
+        "a2a_buyer_composability": {
+            "correlation_id": buyer_correlation.get("correlation_id", ""),
+            "buyer_agent": buyer_actors.get("buyer_agent", ""),
+            "downstream_service": buyer_actors.get("downstream_service", ""),
+            "trustbrief_report_hash": buyer_correlation.get("trustbrief_report_hash", ""),
+            "mock_order_id": buyer_correlation.get("mock_order_id", ""),
+            "downstream_decision": buyer_decision.get("decision", ""),
+            "reason": buyer_decision.get("reason", ""),
+            "live_payment_state": _require_dict(buyer_composability, "live_cap_placeholders").get("payment_state", ""),
         },
         "credentialed_live_proof_slot": {
             "ready_to_attempt": readiness.get("ready_to_attempt", False),
@@ -205,6 +226,7 @@ def build_submission_package(bundle: Dict[str, Any], *, bundle_path: Optional[Pa
 def render_submission_markdown(package: Dict[str, Any]) -> str:
     copy = _require_dict(package, "dorahacks_buidl_copy")
     source = _require_dict(package, "source_hash_block")
+    buyer = _require_dict(package, "a2a_buyer_composability")
     live_slot = _require_dict(package, "credentialed_live_proof_slot")
     bundle = _require_dict(package, "source_bundle")
 
@@ -269,6 +291,8 @@ def render_submission_markdown(package: Dict[str, Any]) -> str:
             "- Report hash: {}".format(source.get("report_hash", "")),
             "- Mock CAP tx hash: {}".format(source.get("mock_tx_hash", "")),
             "- Request input hash: {}".format(source.get("request_input_hash", "")),
+            "- Buyer correlation ID: {}".format(source.get("buyer_correlation_id", "")),
+            "- Buyer downstream decision: {}".format(source.get("buyer_downstream_decision", "")),
             "- Tests passed: {}".format(source.get("tests_passed", "")),
             "",
             "### Key Asset Hashes",
@@ -277,6 +301,22 @@ def render_submission_markdown(package: Dict[str, Any]) -> str:
     )
     for line in source.get("key_asset_hashes", []) or []:
         lines.append("- {}".format(line))
+
+    lines.extend(
+        [
+            "",
+            "## A2A Buyer Composability",
+            "",
+            "- Buyer agent: {}".format(buyer.get("buyer_agent", "")),
+            "- Downstream service: {}".format(buyer.get("downstream_service", "")),
+            "- Correlation ID: {}".format(buyer.get("correlation_id", "")),
+            "- TrustBrief report hash: {}".format(buyer.get("trustbrief_report_hash", "")),
+            "- Mock order ID: {}".format(buyer.get("mock_order_id", "")),
+            "- Downstream decision: {}".format(buyer.get("downstream_decision", "")),
+            "- Decision reason: {}".format(buyer.get("reason", "")),
+            "- Live payment state: {}".format(buyer.get("live_payment_state", "")),
+        ]
+    )
 
     lines.extend(["", "## Credentialed Live Proof Slot", ""])
     lines.append("- Ready to attempt: {}".format(live_slot.get("ready_to_attempt", False)))
