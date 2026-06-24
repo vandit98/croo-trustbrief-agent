@@ -63,9 +63,14 @@ def build_submission_package(bundle: Dict[str, Any], *, bundle_path: Optional[Pa
     offline_proof = _require_dict(bundle, "offline_proof")
     requester_demo = _require_dict(offline_proof, "requester_demo")
     buyer_composability = _require_dict(offline_proof, "buyer_composability")
+    live_commerce_evidence = _require_dict(offline_proof, "live_commerce_evidence")
     buyer_correlation = _require_dict(buyer_composability, "correlation")
     buyer_decision = _require_dict(buyer_composability, "downstream_decision")
     buyer_actors = _require_dict(buyer_composability, "actors")
+    live_manifest_proof = _require_dict(live_commerce_evidence, "proof")
+    payment_authorization = _require_dict(live_commerce_evidence, "payment_authorization")
+    hash_comparison = _require_dict(live_commerce_evidence, "hash_comparison")
+    tap_identity = _require_dict(live_commerce_evidence, "tap_style_identity_intent")
     readiness = _require_dict(requester_demo, "live_order_readiness")
     gate_checks = _require_dict(readiness, "gate_checks")
     required_env = _require_dict(readiness, "required_env")
@@ -118,9 +123,12 @@ def build_submission_package(bundle: Dict[str, Any], *, bundle_path: Optional[Pa
                 "--report-output outputs/demo_report.json "
                 "--mock-output outputs/mock_cap_demo.json "
                 "--requester-output outputs/requester_demo.json "
+                "--buyer-output outputs/buyer_composability_demo.json "
+                "--live-commerce-output outputs/live_commerce_evidence.json "
                 "--output outputs/judge_bundle.json"
             ),
             "live_proof_status": "blocked_by_credentials" if blocked_reasons else "ready_to_attempt",
+            "live_commerce_manifest_status": live_commerce_evidence.get("status", ""),
         },
         "five_minute_runbook": [
             {
@@ -150,8 +158,8 @@ def build_submission_package(bundle: Dict[str, Any], *, bundle_path: Optional[Pa
             },
             {
                 "time": "4:20-5:00",
-                "screen": "outputs/requester_demo.json and outputs/buyer_composability_demo.json",
-                "show": "Live-order gate checks, buyer-agent correlation ID, downstream purchase gate, and exact live proof fields.",
+                "screen": "outputs/requester_demo.json, outputs/buyer_composability_demo.json, and outputs/live_commerce_evidence.json",
+                "show": "Live-order gate checks, buyer-agent correlation ID, payment authorization slots, CAP lifecycle IDs, and exact live proof fields.",
             },
         ],
         "screenshot_checklist": [
@@ -185,6 +193,11 @@ def build_submission_package(bundle: Dict[str, Any], *, bundle_path: Optional[Pa
                 "capture": "Correlation ID, TrustBrief report hash, buyer decision, and reserved live CAP/payment fields.",
                 "status": "ready" if buyer_correlation.get("correlation_id") else "missing_buyer_packet",
             },
+            {
+                "artifact": "live_commerce_evidence_manifest",
+                "capture": "Payment authorization checklist, CAP lifecycle slots, x402 payment states, TAP identity/intent fields, and hash comparison rule.",
+                "status": "ready" if live_manifest_proof.get("manifest_hash") else "missing_live_manifest",
+            },
         ],
         "source_hash_block": {
             "repository_url": repo_url,
@@ -198,6 +211,9 @@ def build_submission_package(bundle: Dict[str, Any], *, bundle_path: Optional[Pa
             "request_input_hash": request_fingerprint.get("input_hash", ""),
             "buyer_correlation_id": buyer_correlation.get("correlation_id", ""),
             "buyer_downstream_decision": buyer_decision.get("decision", ""),
+            "live_commerce_manifest_hash": live_manifest_proof.get("manifest_hash", ""),
+            "live_payment_authorization_status": payment_authorization.get("status", ""),
+            "live_hash_match_status": hash_comparison.get("match_status", ""),
             "key_asset_hashes": _key_asset_lines(judge_assets.get("key_asset_hashes", []) or []),
             "tests_passed": test_result.get("passed"),
         },
@@ -210,6 +226,21 @@ def build_submission_package(bundle: Dict[str, Any], *, bundle_path: Optional[Pa
             "downstream_decision": buyer_decision.get("decision", ""),
             "reason": buyer_decision.get("reason", ""),
             "live_payment_state": _require_dict(buyer_composability, "live_cap_placeholders").get("payment_state", ""),
+        },
+        "live_commerce_evidence": {
+            "status": live_commerce_evidence.get("status", ""),
+            "manifest_hash": live_manifest_proof.get("manifest_hash", ""),
+            "payment_authorization_status": payment_authorization.get("status", ""),
+            "explicit_human_authorization_present": payment_authorization.get("explicit_human_authorization_present", False),
+            "cap_lifecycle_phases": [
+                item.get("phase", "") for item in live_commerce_evidence.get("cap_lifecycle", []) if isinstance(item, dict)
+            ],
+            "x402_payment_states": [
+                item.get("state", "") for item in live_commerce_evidence.get("x402_payment_states", []) if isinstance(item, dict)
+            ],
+            "tap_identity_status": tap_identity.get("trusted_agent_identity_status", ""),
+            "hash_match_status": hash_comparison.get("match_status", ""),
+            "capture_checklist": live_commerce_evidence.get("capture_checklist", []),
         },
         "credentialed_live_proof_slot": {
             "ready_to_attempt": readiness.get("ready_to_attempt", False),
@@ -227,6 +258,7 @@ def render_submission_markdown(package: Dict[str, Any]) -> str:
     copy = _require_dict(package, "dorahacks_buidl_copy")
     source = _require_dict(package, "source_hash_block")
     buyer = _require_dict(package, "a2a_buyer_composability")
+    live_manifest = _require_dict(package, "live_commerce_evidence")
     live_slot = _require_dict(package, "credentialed_live_proof_slot")
     bundle = _require_dict(package, "source_bundle")
 
@@ -293,6 +325,9 @@ def render_submission_markdown(package: Dict[str, Any]) -> str:
             "- Request input hash: {}".format(source.get("request_input_hash", "")),
             "- Buyer correlation ID: {}".format(source.get("buyer_correlation_id", "")),
             "- Buyer downstream decision: {}".format(source.get("buyer_downstream_decision", "")),
+            "- Live commerce manifest hash: {}".format(source.get("live_commerce_manifest_hash", "")),
+            "- Live payment authorization status: {}".format(source.get("live_payment_authorization_status", "")),
+            "- Live hash match status: {}".format(source.get("live_hash_match_status", "")),
             "- Tests passed: {}".format(source.get("tests_passed", "")),
             "",
             "### Key Asset Hashes",
@@ -317,6 +352,31 @@ def render_submission_markdown(package: Dict[str, Any]) -> str:
             "- Live payment state: {}".format(buyer.get("live_payment_state", "")),
         ]
     )
+
+    lines.extend(
+        [
+            "",
+            "## Live Commerce Evidence Manifest",
+            "",
+            "- Status: {}".format(live_manifest.get("status", "")),
+            "- Manifest hash: {}".format(live_manifest.get("manifest_hash", "")),
+            "- Payment authorization: {}".format(live_manifest.get("payment_authorization_status", "")),
+            "- Explicit human authorization present: {}".format(
+                live_manifest.get("explicit_human_authorization_present", False)
+            ),
+            "- CAP lifecycle phases: {}".format(", ".join(live_manifest.get("cap_lifecycle_phases", []) or [])),
+            "- x402 payment states: {}".format(", ".join(live_manifest.get("x402_payment_states", []) or [])),
+            "- TAP identity status: {}".format(live_manifest.get("tap_identity_status", "")),
+            "- Hash comparison: {}".format(live_manifest.get("hash_match_status", "")),
+            "",
+            "### Live Capture Checklist",
+            "",
+        ]
+    )
+    for item in live_manifest.get("capture_checklist", []) or []:
+        if not isinstance(item, dict):
+            continue
+        lines.append("- [{}] {}: {}".format(item.get("status", ""), item.get("artifact", ""), item.get("capture", "")))
 
     lines.extend(["", "## Credentialed Live Proof Slot", ""])
     lines.append("- Ready to attempt: {}".format(live_slot.get("ready_to_attempt", False)))

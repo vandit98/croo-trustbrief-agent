@@ -33,6 +33,7 @@ python3 -m trustbrief_agent.cli examples/sample_request.json --output outputs/de
 python3 -m trustbrief_agent.mock_cap_harness examples/sample_request.json --output outputs/mock_cap_demo.json
 python3 -m trustbrief_agent.requester_harness examples/sample_request.json --output outputs/requester_demo.json
 python3 -m trustbrief_agent.buyer_composability examples/sample_request.json --output outputs/buyer_composability_demo.json
+python3 -m trustbrief_agent.live_commerce_evidence examples/sample_request.json --output outputs/live_commerce_evidence.json
 python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --output outputs/judge_bundle.json
 python3 -m trustbrief_agent.submission_package \
   --bundle outputs/judge_bundle.json \
@@ -49,6 +50,7 @@ python3 -m trustbrief_agent.evidence_bundle \
   --mock-output outputs/mock_cap_demo.json \
   --requester-output outputs/requester_demo.json \
   --buyer-output outputs/buyer_composability_demo.json \
+  --live-commerce-output outputs/live_commerce_evidence.json \
   --public-repo-url https://github.com/vandit98/croo-trustbrief-agent \
   --public-default-branch main \
   --public-visibility public \
@@ -63,6 +65,7 @@ Inspect `outputs/demo_report.json` for the report hash, source ledger, and claim
 Inspect `outputs/mock_cap_demo.json` for a judge-visible mock negotiation, order acceptance, delivery transcript, and report hash.
 Inspect `outputs/requester_demo.json` for request-schema validation, buyer-facing talking points, live-order gate checks, provider launch command, and the exact proof targets to capture once CROO credentials exist.
 Inspect `outputs/buyer_composability_demo.json` for the buyer-agent pre-spend gate, A2A correlation ID, downstream purchase decision, and reserved live CAP/payment fields.
+Inspect `outputs/live_commerce_evidence.json` for the payment authorization checklist, AP2-style intent fields, x402 payment states, TAP-style identity/intent fields, CAP lifecycle capture slots, and offline-vs-live report hash comparison rule.
 Inspect `outputs/judge_bundle.json` for one bundled artifact that includes the report, mock CAP transcript, local git evidence, public-head freshness status, unit-test results, and hashes for the generated judge artifacts.
 Inspect `outputs/dorahacks_demo_package.md` for paste-ready BUIDL copy, a 5-minute recording runbook, screenshot checklist, source/hash block, and the credentialed live-proof slot that remains blocked until CROO dashboard/payment credentials exist.
 
@@ -120,6 +123,19 @@ This makes the handoff between "judge sees the request" and "provider returns th
 
 This demonstrates how TrustBrief can sit inside another agent's purchasing workflow without pretending that an offline run is a live paid order.
 
+## Live Commerce Evidence Manifest
+
+`trustbrief_agent/live_commerce_evidence.py` reserves the exact proof fields for the first credentialed CROO order:
+
+- Agent Store listing URL, provider service ID, provider online evidence, requester agent ID, and funding confirmation
+- payment authorization checklist with explicit human approval and max spend
+- CAP `Negotiate -> Lock -> Deliver -> Clear` IDs, timestamps, payment/escrow hashes, delivery hash, and settlement status
+- AP2-style intent fields, A2A x402-style payment states, and TAP-style identity/intent fields
+- offline preview report hash vs live delivered report hash comparison
+- screenshot and video capture checklist
+
+The manifest is declarative. It does not perform wallet actions, submit to DoraHacks, or claim a live CROO order.
+
 ## Judge Bundle
 
 `trustbrief_agent/evidence_bundle.py` packages the main judge-visible proof into one JSON artifact:
@@ -128,6 +144,7 @@ This demonstrates how TrustBrief can sit inside another agent's purchasing workf
 - the mock CAP lifecycle transcript from `trustbrief_agent.mock_cap_harness`
 - the requester-side validation packet from `trustbrief_agent.requester_harness`
 - the A2A buyer-composability packet from `trustbrief_agent.buyer_composability`
+- the live-commerce evidence manifest from `trustbrief_agent.live_commerce_evidence`
 - focused validation evidence from `python3 -m unittest discover -s tests -p 'test_*.py'`
 - `service_schema.json` plus hashes of README/demo/submission assets
 - hashes of the freshly generated report and mock transcript artifacts

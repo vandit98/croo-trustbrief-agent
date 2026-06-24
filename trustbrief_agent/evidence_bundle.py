@@ -10,6 +10,7 @@ from typing import Any, Dict, Iterable, Optional, Sequence
 
 from .buyer_composability import build_buyer_composability_packet
 from .core import analyze_request, canonical_json, sha256_text
+from .live_commerce_evidence import build_live_commerce_evidence_manifest
 from .mock_cap_harness import run_mock_cap_flow
 from .requester_harness import build_requester_demo
 
@@ -189,6 +190,15 @@ def build_evidence_bundle(
         service_schema_path=service_schema_path,
         analysis_now=analysis_now,
     )
+    live_commerce_evidence = build_live_commerce_evidence_manifest(
+        request_payload,
+        request_path=request_path,
+        requester_demo=requester_demo,
+        buyer_composability=buyer_composability,
+        service_schema_path=service_schema_path,
+        analysis_now=analysis_now,
+        public_repo_state=public_repo_state,
+    )
 
     bundle: Dict[str, Any] = {
         "bundle_schema_version": "1.0.0",
@@ -227,6 +237,7 @@ def build_evidence_bundle(
             "mock_cap_demo": "python3 -m trustbrief_agent.mock_cap_harness examples/sample_request.json --output outputs/mock_cap_demo.json",
             "requester_demo": "python3 -m trustbrief_agent.requester_harness examples/sample_request.json --output outputs/requester_demo.json",
             "buyer_composability_demo": "python3 -m trustbrief_agent.buyer_composability examples/sample_request.json --output outputs/buyer_composability_demo.json",
+            "live_commerce_evidence": "python3 -m trustbrief_agent.live_commerce_evidence examples/sample_request.json --output outputs/live_commerce_evidence.json",
             "judge_bundle": "python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --output outputs/judge_bundle.json",
         },
         "validation": validation_results or {},
@@ -235,11 +246,15 @@ def build_evidence_bundle(
             "mock_cap_transcript": cap_transcript,
             "requester_demo": requester_demo,
             "buyer_composability": buyer_composability,
+            "live_commerce_evidence": live_commerce_evidence,
             "consistency_checks": {
                 "report_hash_matches_transcript": report["proof"]["report_hash"] == cap_transcript["report_summary"]["report_hash"],
                 "source_bundle_hash_matches_transcript": report["proof"]["source_bundle_hash"] == cap_transcript["report_summary"]["source_bundle_hash"],
                 "buyer_report_hash_matches_report": buyer_composability["correlation"]["trustbrief_report_hash"] == report["proof"]["report_hash"],
                 "buyer_request_hash_matches_report_input": buyer_composability["correlation"]["report_input_hash"] == report["proof"]["input_hash"],
+                "live_manifest_report_hash_matches_report": live_commerce_evidence["hash_comparison"]["offline_preview_report_hash"] == report["proof"]["report_hash"],
+                "live_manifest_request_hash_matches_report_input": live_commerce_evidence["request_identity"]["report_input_hash"] == report["proof"]["input_hash"],
+                "live_manifest_no_wallet_action": live_commerce_evidence["safety"]["no_wallet_action_performed"],
                 "local_commit_matches_public_head": artifact_freshness["local_commit_matches_public_head"],
                 "fresh_for_public_demo": artifact_freshness["fresh_for_public_demo"],
             },
@@ -274,6 +289,7 @@ def main() -> int:
     parser.add_argument("--mock-output", help="Optional path to also write the mock CAP transcript JSON.")
     parser.add_argument("--requester-output", help="Optional path to also write the requester demo JSON.")
     parser.add_argument("--buyer-output", help="Optional path to also write the A2A buyer-composability JSON.")
+    parser.add_argument("--live-commerce-output", help="Optional path to also write the live-commerce evidence manifest JSON.")
     parser.add_argument("--public-repo-url", help="Optional verified public repository URL.")
     parser.add_argument("--public-default-branch", help="Optional verified public default branch.")
     parser.add_argument("--public-visibility", help="Optional verified public repository visibility.")
@@ -294,6 +310,16 @@ def main() -> int:
     analysis_now = dt.datetime.now(dt.timezone.utc)
     report = analyze_request(payload, now=analysis_now, use_openai=False)
     cap_transcript = asyncio.run(run_mock_cap_flow(payload, deliver_mode="schema", analysis_now=analysis_now))
+    public_repo_state = {
+        "repository_url": args.public_repo_url,
+        "default_branch": args.public_default_branch,
+        "visibility": args.public_visibility,
+        "head_commit": args.public_head_commit,
+        "head_commit_url": args.public_head_url,
+        "verified_at": args.public_verified_at,
+        "verification_source": args.public_verification_source,
+    }
+    public_repo_state = {key: value for key, value in public_repo_state.items() if value}
 
     generated_paths = []
     if args.report_output:
@@ -320,6 +346,25 @@ def main() -> int:
         )
         _write_json(buyer_output_path, buyer_packet)
         generated_paths.append(buyer_output_path)
+    if args.live_commerce_output:
+        live_output_path = Path(args.live_commerce_output)
+        requester_demo = build_requester_demo(payload, request_path=request_path, analysis_now=analysis_now)
+        buyer_packet = build_buyer_composability_packet(
+            payload,
+            request_path=request_path,
+            requester_demo=requester_demo,
+            analysis_now=analysis_now,
+        )
+        live_manifest = build_live_commerce_evidence_manifest(
+            payload,
+            request_path=request_path,
+            requester_demo=requester_demo,
+            buyer_composability=buyer_packet,
+            analysis_now=analysis_now,
+            public_repo_state=public_repo_state,
+        )
+        _write_json(live_output_path, live_manifest)
+        generated_paths.append(live_output_path)
 
     validation_results = {}
     if not args.skip_tests:
@@ -327,17 +372,6 @@ def main() -> int:
             repo_root,
             ["python3", "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py"],
         )
-
-    public_repo_state = {
-        "repository_url": args.public_repo_url,
-        "default_branch": args.public_default_branch,
-        "visibility": args.public_visibility,
-        "head_commit": args.public_head_commit,
-        "head_commit_url": args.public_head_url,
-        "verified_at": args.public_verified_at,
-        "verification_source": args.public_verification_source,
-    }
-    public_repo_state = {key: value for key, value in public_repo_state.items() if value}
 
     bundle = build_evidence_bundle(
         payload,

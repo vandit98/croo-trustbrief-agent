@@ -569,3 +569,90 @@ python3 -m trustbrief_agent.submission_package --bundle outputs/judge_bundle.jso
 ### Next action
 
 Commit and push the buyer-composability proof to `main`, then regenerate `outputs/judge_bundle.json`, `outputs/buyer_composability_demo.json`, and `outputs/dorahacks_demo_package.md` with the new public head. If CROO credentials and payment authorization become available, supersede further offline packaging with one real Agent Store listing plus paid-order proof chain.
+
+## 2026-06-23 Run - Daily Planner Refresh
+
+### Planner result
+
+- Kaggle remains open for `croo-ai-agent-hackathon-10-k-usd-prize-pool`: `/Users/vandit/.pyenv/shims/kaggle competitions list -s croo` reports deadline `2026-07-12 16:00:00`, reward `10,000 Usd`, `teamCount=5`, and `userHasEntered=True`.
+- Kaggle submissions still report `No submissions found`, and competition files still only list `NOTE.md`.
+- Public GitHub state is current: local `HEAD`, local `origin/main`, and public `git ls-remote` all resolve to `6acc0c4738a6d874c5218f97832cedbd4336ce94` (`Add A2A buyer composability proof`).
+- The A2A buyer-composability executor work is now fully reflected in fresh ignored artifacts: `outputs/judge_bundle.json` has `artifact_freshness.status=fresh_public_head`, `fresh_for_public_demo=true`, bundle hash `9036d172592a9bd87f5609c49590bdcba676612ff53f0fa72a5c35e18bf62d95`, report hash `3f19bed336d1fd5391f7399c375a248a74ad9331e63913411b2e4f1807290fc7`, and buyer/report hash consistency true.
+- Focused validation still passes: `python3 -m unittest discover -s tests -p 'test_*.py'` -> `Ran 14 tests in 0.371s ... OK`.
+- DoraHacks direct verification remains blocked by WAF/CAPTCHA (`HTTP 405`, `x-amzn-waf-action: captcha`), so actual BUIDL state remains unverified.
+- CROO docs still define the live proof path as Agent Store registration, provider SDK connection, a second requester agent with USDC, and CAP `Negotiate -> Lock -> Deliver -> Clear`.
+
+### Planner decision
+
+The highest-upside target remains a real CROO Agent Store listing plus one paid order proof chain if credentials, requester funding, and payment authorization are available. Without those credentials, the best unblocked executor target for June 23, 2026 is a compact live-commerce evidence manifest integrated into the judge bundle and DoraHacks package: payment authorization checklist, CAP lifecycle IDs, AP2/x402-style payment states, TAP-style agent identity/intent fields, offline-vs-live report hash comparison, and screenshot/video capture steps. This should not perform wallet actions or claim live proof; it should make the eventual credentialed capture deterministic.
+
+## 2026-06-24 Run - Daily Planner Refresh
+
+### Planner result
+
+- Kaggle remains open for `croo-ai-agent-hackathon-10-k-usd-prize-pool`: `/Users/vandit/.pyenv/shims/kaggle competitions list -s croo` reports deadline `2026-07-12 16:00:00`, reward `10,000 Usd`, `teamCount=5`, and `userHasEntered=True`.
+- Kaggle submissions still report `No submissions found`, and competition files still only list `NOTE.md`.
+- Public GitHub state is unchanged and current: local `HEAD`, local `origin/main`, and public `git ls-remote` all resolve to `6acc0c4738a6d874c5218f97832cedbd4336ce94` (`Add A2A buyer composability proof`).
+- The current judge bundle remains fresh for public demo: `artifact_freshness.status=fresh_public_head`, `fresh_for_public_demo=true`, bundle hash `9036d172592a9bd87f5609c49590bdcba676612ff53f0fa72a5c35e18bf62d95`, and report hash `3f19bed336d1fd5391f7399c375a248a74ad9331e63913411b2e4f1807290fc7`.
+- Focused validation still passes: `python3 -m unittest discover -s tests -p 'test_*.py'` -> `Ran 14 tests in 1.550s ... OK`.
+- DoraHacks direct verification remains blocked by WAF/CAPTCHA (`HTTP 405`, `x-amzn-waf-action: captcha`), so actual BUIDL state remains unverified.
+- Public CROO/CAP and agent-commerce research continues to support the same judge-facing path: listing quality, schema/SLA clarity, A2A buyer composability, verifiable payment authorization, CAP lifecycle IDs, delivery hashes, and auditable settlement state.
+
+### Planner decision
+
+If CROO credentials, requester funding, and explicit payment authorization are available, the best executor target is still one real Agent Store listing plus one paid-order proof chain. Without those credentials, the best unblocked executor target for June 24, 2026 is to add the compact `live_commerce_evidence` manifest to the judge bundle and DoraHacks package, with CAP lifecycle IDs, AP2-style authorization fields, A2A x402 payment states, TAP-style identity/intent fields, offline-vs-live hash comparison, and screenshot/video capture steps. This remains planner-only; no wallet/payment or DoraHacks action was attempted.
+
+## 2026-06-24 Run - Live Commerce Evidence Manifest
+
+### Chosen target
+
+Implement the planner-recommended `live_commerce_evidence` manifest because no CROO credentials, requester funding, or payment authorization were present. The target was to make the first credentialed CROO paid-order capture deterministic without performing wallet, Agent Store, or DoraHacks actions.
+
+### Exact changes
+
+- Added `trustbrief_agent/live_commerce_evidence.py` to generate `outputs/live_commerce_evidence.json` with service target fields, request/report hashes, payment authorization status, AP2-style intent placeholders, A2A x402 payment states, TAP-style identity/intent fields, CAP `Negotiate -> Lock -> Deliver -> Clear` capture slots, offline-vs-live hash comparison, screenshot/video checklist, credential gates, and explicit no-wallet/no-DoraHacks safety fields.
+- Integrated the manifest into `trustbrief_agent/evidence_bundle.py` with `--live-commerce-output`, generated-artifact hashing, bundle commands, and consistency checks tying the manifest's report/input hashes back to the deterministic report.
+- Extended `trustbrief_agent/submission_package.py` so generated DoraHacks material includes live-commerce manifest status, manifest hash, payment authorization status, x402 states, CAP lifecycle phases, TAP identity status, and live capture checklist.
+- Updated `README.md`, `DEMO_SCRIPT.md`, and `HACKATHON_SUBMISSION.md` so the demo flow and submission draft show the manifest as the live-proof capture contract rather than a completed live order.
+- Added focused tests for manifest generation, bundle consistency, and rendered submission-package output.
+
+### Commands run
+
+```bash
+git status --short --branch
+git remote -v
+GIT_TERMINAL_PROMPT=0 git ls-remote https://github.com/vandit98/croo-trustbrief-agent.git refs/heads/main
+GIT_TERMINAL_PROMPT=0 git fetch origin main
+/Users/vandit/.pyenv/shims/kaggle competitions list -s croo
+PYENV_VERSION=3.13.3 /Users/vandit/.pyenv/shims/kaggle competitions submissions croo-ai-agent-hackathon-10-k-usd-prize-pool
+/Users/vandit/.pyenv/shims/kaggle competitions files croo-ai-agent-hackathon-10-k-usd-prize-pool
+env | sort | rg '^(CROO|TRUSTBRIEF|OPENAI|KAGGLE)_'
+python3 -m unittest discover -s tests -p 'test_*.py'
+python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --report-output outputs/demo_report.json --mock-output outputs/mock_cap_demo.json --requester-output outputs/requester_demo.json --buyer-output outputs/buyer_composability_demo.json --live-commerce-output outputs/live_commerce_evidence.json --public-repo-url https://github.com/vandit98/croo-trustbrief-agent --public-default-branch main --public-visibility public --public-head-commit 6acc0c4738a6d874c5218f97832cedbd4336ce94 --public-head-url https://github.com/vandit98/croo-trustbrief-agent/commit/6acc0c4738a6d874c5218f97832cedbd4336ce94 --public-verified-at 2026-06-24T05:53:21Z --public-verification-source "git ls-remote https://github.com/vandit98/croo-trustbrief-agent.git refs/heads/main" --output outputs/judge_bundle.json
+python3 -m trustbrief_agent.submission_package --bundle outputs/judge_bundle.json --output outputs/dorahacks_demo_package.md --json-output outputs/dorahacks_demo_package.json
+```
+
+### Results
+
+- Public `main` before editing was verified at `6acc0c4738a6d874c5218f97832cedbd4336ce94`, and local `HEAD` plus `origin/main` matched it.
+- Kaggle remains open with deadline `2026-07-12 16:00:00`, reward `10,000 Usd`, `teamCount=5`, and `userHasEntered=True`; submissions still report `No submissions found`; competition files still only list `NOTE.md`.
+- No `CROO_*`, `TRUSTBRIEF_*`, `OPENAI_*`, or `KAGGLE_*` env vars were printed by the env check, so no live provider, wallet/payment, Agent Store, or DoraHacks action was attempted.
+- Unit validation passed after fixing the manifest hash comparison to distinguish the raw buyer request hash from the report-input hash: `python3 -m unittest discover -s tests -p 'test_*.py'` -> `Ran 15 tests in 0.155s ... OK`.
+- Pre-commit bundle refresh succeeded and correctly reported tracked source drift:
+  - `artifact_freshness.status=tracked_files_dirty`
+  - `artifact_freshness.fresh_for_public_demo=false`
+  - `validation.tests.passed=true`
+  - `proof.bundle_hash=e0c242c487a5200856d68b92419d2966f70100919c067755b523cf6d117899ee`
+  - `proof.report_hash=d3ca70efb50f8b7dc5e79fd8c2e650729124964ec4eb5ef62f8225bd4082266a`
+- `outputs/live_commerce_evidence.json` generated locally with `status=blocked_by_credentials`, `payment_authorization.status=not_authorized`, `hash_comparison.match_status=pending_live_delivery`, `proof.manifest_hash=ccd9fbc5da989e10f0351163b13b7b7d43f2a70eea0a34279aefaa8a86ca5f0f`, and safety flags `no_wallet_action_performed=true`, `no_dorahacks_submission_performed=true`, and `no_live_croo_order_claimed=true`.
+- `outputs/dorahacks_demo_package.md/json` regenerated locally and now includes the `Live Commerce Evidence Manifest` section plus live capture checklist; pre-commit package freshness is false until the code is committed, pushed, and regenerated against the new public head.
+
+### Blockers
+
+- Live CROO proof remains blocked by missing dashboard/API credentials, provider SDK key, requester SDK key, provider service ID, requester AA-wallet funding, and explicit payment authorization.
+- DoraHacks filing remains blocked by manual login/human verification.
+- The pre-commit generated bundle is intentionally not fresh for public demo until the commit is pushed and ignored local artifacts are regenerated against the new public head.
+
+### Next action
+
+Commit and push the live-commerce evidence manifest to `main`, then regenerate `outputs/judge_bundle.json`, `outputs/live_commerce_evidence.json`, and `outputs/dorahacks_demo_package.md/json` with the new public head. If CROO credentials, requester funding, and explicit payment authorization become available, use the manifest to capture one real Agent Store listing plus paid-order proof chain.
