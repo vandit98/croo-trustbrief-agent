@@ -41,6 +41,7 @@ python3 -m trustbrief_agent.submission_package \
 Open the report and show:
 
 - `dorahacks_demo_package.md` showing the BUIDL copy, 5-minute recording sequence, screenshot checklist, source/hash block, and credentialed live-proof slot
+- `dorahacks_demo_package.md` showing the judge demo capture plan with screenshot filenames, safe spoken claims, and claims to avoid before live proof exists
 - `recommendation`
 - `claim_assessments`
 - `source_ledger`
@@ -81,3 +82,5 @@ Show `outputs/buyer_composability_demo.json` and `outputs/live_commerce_evidence
 ## 4:20-5:00 - Close
 
 "The core works without secrets. To go live, register the provider in CROO Agent Store, paste the schema from this repo, set the SDK key, and start the provider. From there every paid request settles through CAP, and the buyer packet is where the live order IDs, delivery tx hash, and downstream decision proof will land."
+
+Use the generated "Judge Demo Capture Plan" section in `outputs/dorahacks_demo_package.md` as the recording checklist. It gives the exact screenshot names and spoken claims while preserving the no-live-order/no-DoraHacks-submission guardrails.

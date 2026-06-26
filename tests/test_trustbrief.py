@@ -457,6 +457,9 @@ class TrustBriefTests(unittest.TestCase):
         self.assertEqual(package["live_commerce_evidence"]["payment_authorization_status"], "not_authorized")
         self.assertIn("deliver", package["live_commerce_evidence"]["cap_lifecycle_phases"])
         self.assertIn("payment_completed", package["live_commerce_evidence"]["x402_payment_states"])
+        self.assertTrue(package["judge_demo_capture_plan"]["publish_gate"]["ready_for_offline_demo"])
+        self.assertIn("01_public_repo_head.png", [shot["file_name"] for shot in package["judge_demo_capture_plan"]["shot_list"]])
+        self.assertIn("The Agent Store listing is already live.", package["judge_demo_capture_plan"]["do_not_claim"])
         self.assertFalse(package["credentialed_live_proof_slot"]["ready_to_attempt"])
 
     def test_submission_package_markdown_preserves_live_blockers(self):
@@ -468,10 +471,14 @@ class TrustBriefTests(unittest.TestCase):
         self.assertIn("Bundle freshness: fresh_public_head (fresh_for_public_demo=True)", rendered)
         self.assertIn("A2A Buyer Composability", rendered)
         self.assertIn("Live Commerce Evidence Manifest", rendered)
+        self.assertIn("Judge Demo Capture Plan", rendered)
+        self.assertIn("01_public_repo_head.png", rendered)
+        self.assertIn("No wallet action, DoraHacks submission, or live CROO order was performed", rendered)
         self.assertIn("payment_required", rendered)
         self.assertIn("pending_live_delivery", rendered)
         self.assertIn("Missing CROO runtime env vars", rendered)
         self.assertIn("paid_order_chain", rendered)
+        self.assertIn("The Agent Store listing is already live.", rendered)
         self.assertNotIn("live paid order complete", rendered.lower())
 
 

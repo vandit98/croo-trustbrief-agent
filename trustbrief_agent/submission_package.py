@@ -199,6 +199,139 @@ def build_submission_package(bundle: Dict[str, Any], *, bundle_path: Optional[Pa
                 "status": "ready" if live_manifest_proof.get("manifest_hash") else "missing_live_manifest",
             },
         ],
+        "judge_demo_capture_plan": {
+            "recording_goal": (
+                "Record a judge-ready offline demo that sells TrustBrief as paid pre-spend verification, "
+                "not just generic A2A or payment plumbing."
+            ),
+            "positioning": [
+                "Lead with the buyer problem: an agent should verify evidence before spending or trusting another service.",
+                "Show CAP integration as the commerce rail after the source hashes, claim verdicts, and report hash are visible.",
+                "Make the live-order gap explicit: the package reserves exact proof fields but does not claim a live CROO payment.",
+            ],
+            "shot_list": [
+                {
+                    "file_name": "01_public_repo_head.png",
+                    "time": "0:00-0:25",
+                    "screen": "Public GitHub repo and README",
+                    "must_show": [
+                        "repository URL",
+                        "MIT license",
+                        "latest public head {}".format(public_repo_state.get("head_commit", repo_state.get("commit", ""))),
+                    ],
+                    "spoken_claim": (
+                        "This is the public source package; the bundle records whether it matches the judge-visible main branch."
+                    ),
+                },
+                {
+                    "file_name": "02_service_schema_listing.png",
+                    "time": "0:25-0:55",
+                    "screen": "service_schema.json",
+                    "must_show": [
+                        "TrustBrief CAP Verifier",
+                        "Verified Research Brief",
+                        "1 USDC price",
+                        "20 minute SLA",
+                        "schema requirements and deliverable",
+                    ],
+                    "spoken_claim": "TrustBrief is shaped as a paid Agent Store service with a concrete unit, price, SLA, and schema.",
+                },
+                {
+                    "file_name": "03_judge_bundle_freshness.png",
+                    "time": "0:55-1:35",
+                    "screen": "outputs/judge_bundle.json",
+                    "must_show": [
+                        "artifact_freshness.status",
+                        "fresh_for_public_demo",
+                        "validation.tests.passed",
+                        "proof.bundle_hash",
+                    ],
+                    "spoken_claim": "The judge bundle ties the demo artifacts to tests, hashes, and public-head freshness.",
+                },
+                {
+                    "file_name": "04_report_provenance.png",
+                    "time": "1:35-2:25",
+                    "screen": "outputs/demo_report.json",
+                    "must_show": [
+                        "claim_assessments",
+                        "source_ledger sha256 values",
+                        "risk_flags",
+                        "proof.report_hash",
+                    ],
+                    "spoken_claim": "The deliverable is machine-readable due diligence, with claim-level evidence and provenance hashes.",
+                },
+                {
+                    "file_name": "05_cap_provider_lifecycle.png",
+                    "time": "2:25-3:20",
+                    "screen": "trustbrief_agent/cap_provider.py and outputs/mock_cap_demo.json",
+                    "must_show": [
+                        "NEGOTIATION_CREATED handler",
+                        "ORDER_PAID handler",
+                        "mock negotiation_id",
+                        "mock order_id",
+                        "mock tx_hash",
+                    ],
+                    "spoken_claim": "The offline CAP transcript exercises the same accept-and-deliver handlers used by live provider mode.",
+                },
+                {
+                    "file_name": "06_buyer_manifest_gate.png",
+                    "time": "3:20-4:20",
+                    "screen": "outputs/buyer_composability_demo.json and outputs/live_commerce_evidence.json",
+                    "must_show": [
+                        "buyer correlation ID",
+                        "downstream decision",
+                        "payment_authorization.status",
+                        "cap_lifecycle slots",
+                        "hash_comparison.match_status",
+                    ],
+                    "spoken_claim": (
+                        "A buyer agent can use this report hash and risk decision as a pre-spend gate before another purchase."
+                    ),
+                },
+                {
+                    "file_name": "07_live_proof_slot.png",
+                    "time": "4:20-5:00",
+                    "screen": "outputs/dorahacks_demo_package.md",
+                    "must_show": [
+                        "blocked credential reasons",
+                        "proof targets",
+                        "manual live steps",
+                    ],
+                    "spoken_claim": (
+                        "The live proof slot names exactly what must be captured after dashboard credentials and payment authorization exist."
+                    ),
+                },
+            ],
+            "safe_spoken_claims": [
+                "TrustBrief produces deterministic offline evidence today.",
+                "The live provider code is wired for CROO negotiation and paid-order delivery.",
+                "The package is ready for a credentialed Agent Store listing and first paid-order capture.",
+                "No wallet action, DoraHacks submission, or live CROO order was performed by this offline generator.",
+            ],
+            "do_not_claim": [
+                "The Agent Store listing is already live.",
+                "A real CROO payment or escrow transaction has completed.",
+                "The DoraHacks BUIDL has been submitted from this environment.",
+                "TrustBrief has rank 1 or any judged placement before official results exist.",
+            ],
+            "publish_gate": {
+                "ready_for_offline_demo": bool(
+                    freshness.get("fresh_for_public_demo")
+                    and test_result.get("passed")
+                    and proof.get("report_hash")
+                    and live_manifest_proof.get("manifest_hash")
+                ),
+                "requires_before_final_live_demo": [
+                    "Agent Store listing URL",
+                    "provider online evidence",
+                    "real negotiation_id and order_id",
+                    "payment or escrow transaction hash",
+                    "delivery transaction hash",
+                    "live delivered report hash",
+                    "DoraHacks BUIDL URL or submission confirmation",
+                ],
+            },
+        },
         "source_hash_block": {
             "repository_url": repo_url,
             "local_commit": repo_state.get("commit", ""),
@@ -256,6 +389,7 @@ def build_submission_package(bundle: Dict[str, Any], *, bundle_path: Optional[Pa
 
 def render_submission_markdown(package: Dict[str, Any]) -> str:
     copy = _require_dict(package, "dorahacks_buidl_copy")
+    capture_plan = _require_dict(package, "judge_demo_capture_plan")
     source = _require_dict(package, "source_hash_block")
     buyer = _require_dict(package, "a2a_buyer_composability")
     live_manifest = _require_dict(package, "live_commerce_evidence")
@@ -305,6 +439,43 @@ def render_submission_markdown(package: Dict[str, Any]) -> str:
         if not isinstance(item, dict):
             continue
         lines.append("- [{}] {}: {}".format(item.get("status", ""), item.get("artifact", ""), item.get("capture", "")))
+
+    lines.extend(["", "## Judge Demo Capture Plan", ""])
+    lines.append(str(capture_plan.get("recording_goal", "")))
+
+    lines.extend(["", "### Positioning", ""])
+    for item in capture_plan.get("positioning", []) or []:
+        lines.append("- {}".format(item))
+
+    lines.extend(["", "### Shot List", ""])
+    for shot in capture_plan.get("shot_list", []) or []:
+        if not isinstance(shot, dict):
+            continue
+        must_show = "; ".join(shot.get("must_show", []) or [])
+        lines.append(
+            "- {} - {} ({}): {}".format(
+                shot.get("file_name", ""),
+                shot.get("screen", ""),
+                shot.get("time", ""),
+                must_show,
+            )
+        )
+        if shot.get("spoken_claim"):
+            lines.append("  - Spoken claim: {}".format(shot.get("spoken_claim", "")))
+
+    lines.extend(["", "### Safe Spoken Claims", ""])
+    for item in capture_plan.get("safe_spoken_claims", []) or []:
+        lines.append("- {}".format(item))
+
+    lines.extend(["", "### Do Not Claim", ""])
+    for item in capture_plan.get("do_not_claim", []) or []:
+        lines.append("- {}".format(item))
+
+    publish_gate = _require_dict(capture_plan, "publish_gate")
+    lines.extend(["", "### Publish Gate", ""])
+    lines.append("- Ready for offline demo: {}".format(publish_gate.get("ready_for_offline_demo", False)))
+    for item in publish_gate.get("requires_before_final_live_demo", []) or []:
+        lines.append("- Required before final live demo: {}".format(item))
 
     lines.extend(
         [

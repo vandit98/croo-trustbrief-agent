@@ -67,7 +67,7 @@ Inspect `outputs/requester_demo.json` for request-schema validation, buyer-facin
 Inspect `outputs/buyer_composability_demo.json` for the buyer-agent pre-spend gate, A2A correlation ID, downstream purchase decision, and reserved live CAP/payment fields.
 Inspect `outputs/live_commerce_evidence.json` for the payment authorization checklist, AP2-style intent fields, x402 payment states, TAP-style identity/intent fields, CAP lifecycle capture slots, and offline-vs-live report hash comparison rule.
 Inspect `outputs/judge_bundle.json` for one bundled artifact that includes the report, mock CAP transcript, local git evidence, public-head freshness status, unit-test results, and hashes for the generated judge artifacts.
-Inspect `outputs/dorahacks_demo_package.md` for paste-ready BUIDL copy, a 5-minute recording runbook, screenshot checklist, source/hash block, and the credentialed live-proof slot that remains blocked until CROO dashboard/payment credentials exist.
+Inspect `outputs/dorahacks_demo_package.md` for paste-ready BUIDL copy, a 5-minute recording runbook, screenshot checklist, judge demo capture plan, source/hash block, and the credentialed live-proof slot that remains blocked until CROO dashboard/payment credentials exist.
 
 ## Live CROO Provider
 
@@ -161,6 +161,7 @@ This makes it easier to attach one artifact to a demo folder or screen recording
 - BUIDL copy for DoraHacks fields
 - 5-minute demo runbook
 - screenshot checklist
+- judge demo capture plan with exact screenshot filenames, safe spoken claims, and "do not claim" guardrails
 - source and hash block for the public repo, bundle, request, and report
 - credentialed live-proof slot with the exact blocked reasons and proof targets
 

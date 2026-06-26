@@ -656,3 +656,77 @@ python3 -m trustbrief_agent.submission_package --bundle outputs/judge_bundle.jso
 ### Next action
 
 Commit and push the live-commerce evidence manifest to `main`, then regenerate `outputs/judge_bundle.json`, `outputs/live_commerce_evidence.json`, and `outputs/dorahacks_demo_package.md/json` with the new public head. If CROO credentials, requester funding, and explicit payment authorization become available, use the manifest to capture one real Agent Store listing plus paid-order proof chain.
+
+## 2026-06-26 Run - Daily Planner Refresh
+
+### Planner result
+
+- Kaggle remains open for `croo-ai-agent-hackathon-10-k-usd-prize-pool`: `/Users/vandit/.pyenv/shims/kaggle competitions list -s croo` reports deadline `2026-07-12 16:00:00`, reward `10,000 Usd`, `teamCount=6`, and `userHasEntered=True`.
+- Kaggle submissions still report `No submissions found`, and the only competition file is `NOTE.md`; refreshed download confirms this is a hackathon with no provided dataset.
+- Public GitHub state is current: local `HEAD`, local `origin/main`, and public `git ls-remote` all resolve to `72aeaba4f3f750cea0d02e1139b7a003213c3d2d` (`Add live commerce evidence manifest`).
+- The live-commerce evidence manifest from the prior executor run has landed and the current `outputs/judge_bundle.json` is fresh for public demo with `artifact_freshness.status=fresh_public_head`, `fresh_for_public_demo=true`, bundle hash `6d5cbcc6a1a2b2efcf0bb2698c0d861fd76d22d10dec419faf135c548a546d26`, report hash `9b9a6f65fd7f201748a78aa286f6a276e43db1caab1bb8aa405f66b91205a31c`, and live-commerce manifest hash `258d4ed87f2c13be2d6f37fa8c3b503d54428b10888ab6b37a1bb83f8466433f`.
+- Focused validation still passes: `python3 -m unittest discover -s tests -p 'test_*.py'` -> `Ran 15 tests in 0.267s ... OK`.
+- No `CROO_*`, `TRUSTBRIEF_*`, `OPENAI_*`, or `KAGGLE_*` env var names were present in shell output, so no live provider, wallet/payment, Agent Store, or DoraHacks action was attempted.
+- DoraHacks direct verification remains blocked by WAF/CAPTCHA (`HTTP 405`), but public search now exposes at least one competing CROO BUIDL, `CROO A2A Agent Chain`, focused on A2A/CAP/USDC. This makes TrustBrief's differentiation depend on paid verification utility, auditability, and live paid-order proof rather than generic A2A claims.
+
+### Planner decision
+
+If CROO credentials, requester funding, and explicit payment authorization are available, the best executor target is still one real Agent Store listing plus one paid-order proof chain. Without those credentials, the best unblocked executor target for June 26, 2026 is to produce the final judge-demo/BUIDL package from the current fresh artifacts: a 5-minute capture sequence, screenshot checklist, source/hash block, and competitor-aware story emphasizing pre-spend due diligence, provenance hashes, buyer gating, and the deterministic live paid-order capture contract. Do not add broad product features, attempt wallet/payment actions, or submit to DoraHacks in that executor run.
+
+## 2026-06-26 Run - Judge Demo Capture Plan
+
+### Chosen target
+
+Produce the final judge-demo/BUIDL package improvement recommended by the planner because no CROO credentials, requester funding, or explicit payment authorization were present. The target was a clearer recording contract: exact screenshots, safe spoken claims, and hard guardrails against claiming live Agent Store, payment, or DoraHacks completion before those proofs exist.
+
+### Exact changes
+
+- Extended `trustbrief_agent/submission_package.py` with `judge_demo_capture_plan`, including competitor-aware positioning, 7 named screenshot captures, safe spoken claims, "do not claim" guardrails, and a publish gate for offline vs live demo readiness.
+- Rendered the new capture plan into `outputs/dorahacks_demo_package.md` so the generated package now contains the BUIDL copy, runbook, screenshot checklist, capture-plan guardrails, source/hash block, A2A buyer proof, live-commerce manifest, and credentialed live-proof slot.
+- Added focused tests in `tests/test_trustbrief.py` proving the package preserves the capture plan, screenshot filenames, safe no-wallet/no-DoraHacks language, and live-claim guardrails.
+- Updated `README.md`, `DEMO_SCRIPT.md`, and `HACKATHON_SUBMISSION.md` so judges and the recorder know to use the generated capture plan.
+
+### Commands run
+
+```bash
+git status --short --branch
+git rev-parse HEAD
+git rev-parse origin/main
+git rev-list --left-right --count origin/main...HEAD
+GIT_TERMINAL_PROMPT=0 git ls-remote https://github.com/vandit98/croo-trustbrief-agent.git refs/heads/main
+python3 - <<'PY'
+import os
+names = [n for n in os.environ if n.startswith(('CROO_', 'TRUSTBRIEF_', 'OPENAI_', 'KAGGLE_'))]
+print('\n'.join(sorted(names)) if names else 'NO_MATCHING_ENV_NAMES')
+PY
+/Users/vandit/.pyenv/shims/kaggle competitions list -s croo
+/Users/vandit/.pyenv/shims/kaggle competitions submissions croo-ai-agent-hackathon-10-k-usd-prize-pool
+/Users/vandit/.pyenv/shims/kaggle competitions files croo-ai-agent-hackathon-10-k-usd-prize-pool
+python3 -m unittest discover -s tests -p 'test_*.py'
+python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --report-output outputs/demo_report.json --mock-output outputs/mock_cap_demo.json --requester-output outputs/requester_demo.json --buyer-output outputs/buyer_composability_demo.json --live-commerce-output outputs/live_commerce_evidence.json --public-repo-url https://github.com/vandit98/croo-trustbrief-agent --public-default-branch main --public-visibility public --public-head-commit 72aeaba4f3f750cea0d02e1139b7a003213c3d2d --public-head-url https://github.com/vandit98/croo-trustbrief-agent/commit/72aeaba4f3f750cea0d02e1139b7a003213c3d2d --public-verified-at 2026-06-26T09:20:00Z --public-verification-source "git ls-remote" --output outputs/judge_bundle.json
+python3 -m trustbrief_agent.submission_package --bundle outputs/judge_bundle.json --output outputs/dorahacks_demo_package.md --json-output outputs/dorahacks_demo_package.json
+```
+
+### Results
+
+- Public `main` before editing was verified at `72aeaba4f3f750cea0d02e1139b7a003213c3d2d`, and local `HEAD`, local `origin/main`, and public `git ls-remote` matched.
+- Kaggle remains open with deadline `2026-07-12 16:00:00`, reward `10,000 Usd`, `teamCount=6`, and `userHasEntered=True`; submissions still report `No submissions found`; competition files still only list `NOTE.md`.
+- No matching `CROO_*`, `TRUSTBRIEF_*`, `OPENAI_*`, or `KAGGLE_*` environment variable names were present, so no live provider, wallet/payment, Agent Store, or DoraHacks action was attempted.
+- `python3 -m unittest discover -s tests -p 'test_*.py'` -> `Ran 15 tests in 0.125s ... OK`.
+- Pre-commit bundle/package smoke passed:
+  - `outputs/dorahacks_demo_package.json.judge_demo_capture_plan.publish_gate.ready_for_offline_demo=false` because tracked files were dirty pre-commit.
+  - `outputs/dorahacks_demo_package.json.judge_demo_capture_plan.shot_list` contains 7 entries, starting with `01_public_repo_head.png`.
+  - `outputs/dorahacks_demo_package.json.dorahacks_buidl_copy.live_proof_status=blocked_by_credentials`.
+  - `outputs/dorahacks_demo_package.md` now renders `Judge Demo Capture Plan`, `Do Not Claim`, and the Agent Store/live-payment guardrails.
+  - `outputs/judge_bundle.json.artifact_freshness.status=tracked_files_dirty`, `fresh_for_public_demo=false`, and `validation.tests.passed=true`, as expected before commit.
+  - Pre-commit `proof.bundle_hash=85a2756f1e27677b1fff390e03ecd418a452ed5f2fe01137938cfcf7b0da9fe7` and `proof.report_hash=69261629c1aaa54f7f61d85902c4e68331eba741f0bcf443c02583d4a8d9abc1`.
+
+### Blockers
+
+- Live CROO proof remains blocked by missing dashboard/API credentials, provider SDK key, requester SDK key, provider service ID, requester AA-wallet funding, and explicit payment authorization.
+- DoraHacks filing remains blocked by manual login/human verification.
+- The pre-commit generated bundle is intentionally not fresh for public demo until this commit is pushed and ignored local artifacts are regenerated against the new public head.
+
+### Next action
+
+Commit and push the judge-demo capture plan to `main`, then regenerate `outputs/judge_bundle.json`, `outputs/live_commerce_evidence.json`, and `outputs/dorahacks_demo_package.md/json` with the new public head. If CROO credentials, requester funding, and explicit payment authorization become available, supersede further offline packaging with one real Agent Store listing plus paid-order proof chain.
