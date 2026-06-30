@@ -6,6 +6,7 @@ import unittest
 from dataclasses import dataclass
 from pathlib import Path
 
+from trustbrief_agent.agent_store_listing_kit import build_agent_store_listing_kit
 from trustbrief_agent.buyer_composability import build_buyer_composability_packet
 from trustbrief_agent.cap_provider import build_delivery_request, handle_negotiation_created, handle_order_paid
 from trustbrief_agent.core import analyze_request, evaluate_claim, load_source
@@ -288,7 +289,10 @@ class TrustBriefTests(unittest.TestCase):
         self.assertTrue(bundle["offline_proof"]["consistency_checks"]["live_manifest_report_hash_matches_report"])
         self.assertTrue(bundle["offline_proof"]["consistency_checks"]["live_manifest_request_hash_matches_report_input"])
         self.assertTrue(bundle["offline_proof"]["consistency_checks"]["live_manifest_no_wallet_action"])
+        self.assertTrue(bundle["offline_proof"]["consistency_checks"]["listing_kit_service_schema_matches_asset"])
+        self.assertTrue(bundle["offline_proof"]["consistency_checks"]["listing_kit_no_secret_capture"])
         self.assertEqual(bundle["offline_proof"]["live_commerce_evidence"]["status"], "blocked_by_credentials")
+        self.assertTrue(bundle["offline_proof"]["agent_store_listing_kit"]["readiness"]["listing_copy_ready"])
         self.assertTrue(bundle["offline_proof"]["requester_demo"]["schema_validation"]["valid"])
         self.assertEqual(
             bundle["offline_proof"]["buyer_composability"]["downstream_decision"]["decision"],
@@ -441,6 +445,29 @@ class TrustBriefTests(unittest.TestCase):
         self.assertTrue(manifest["safety"]["no_dorahacks_submission_performed"])
         self.assertRegex(manifest["proof"]["manifest_hash"], r"^[a-f0-9]{64}$")
 
+    def test_agent_store_listing_kit_builds_dashboard_copy_without_secrets(self):
+        kit = build_agent_store_listing_kit(
+            service_schema_path=Path("service_schema.json"),
+            analysis_now=FIXED_NOW,
+            public_repo_state={
+                "repository_url": "https://github.com/vandit98/croo-trustbrief-agent",
+                "head_commit": "abc123",
+                "head_commit_url": "https://github.com/vandit98/croo-trustbrief-agent/commit/abc123",
+            },
+        )
+
+        self.assertEqual(kit["agent_store_listing_kit_schema_version"], "1.0.0")
+        self.assertEqual(kit["dashboard_copy"]["agent_name"], "TrustBrief CAP Verifier")
+        self.assertEqual(kit["dashboard_copy"]["service_name"], "Verified Research Brief")
+        self.assertEqual(kit["readiness"]["dashboard_status"], "ready_to_create_listing")
+        self.assertFalse(kit["readiness"]["provider_env_ready"])
+        self.assertIn("CROO_SDK_KEY", kit["readiness"]["missing_provider_env"])
+        self.assertIn("requirements_schema", [item["dashboard_field"] for item in kit["schema_paste_targets"]])
+        self.assertIn("agent_store_05_first_paid_order.png", [item["file_name"] for item in kit["capture_contract"]["screenshot_files"]])
+        self.assertTrue(kit["safety"]["records_secret_values"] is False)
+        self.assertIn("SDK keys", " ".join(kit["do_not_claim"]))
+        self.assertRegex(kit["proof"]["listing_kit_hash"], r"^[a-f0-9]{64}$")
+
     def test_submission_package_builds_dorahacks_copy_from_bundle(self):
         bundle = _submission_bundle_fixture()
         package = build_submission_package(bundle, bundle_path=Path("outputs/judge_bundle.json"))
@@ -457,6 +484,9 @@ class TrustBriefTests(unittest.TestCase):
         self.assertEqual(package["live_commerce_evidence"]["payment_authorization_status"], "not_authorized")
         self.assertIn("deliver", package["live_commerce_evidence"]["cap_lifecycle_phases"])
         self.assertIn("payment_completed", package["live_commerce_evidence"]["x402_payment_states"])
+        self.assertTrue(package["agent_store_listing_kit"]["listing_copy_ready"])
+        self.assertEqual(package["agent_store_listing_kit"]["dashboard_status"], "ready_to_create_listing")
+        self.assertIn("agent_store_01_listing_overview.png", [shot["file_name"] for shot in package["agent_store_listing_kit"]["screenshot_files"]])
         self.assertTrue(package["judge_demo_capture_plan"]["publish_gate"]["ready_for_offline_demo"])
         self.assertIn("01_public_repo_head.png", [shot["file_name"] for shot in package["judge_demo_capture_plan"]["shot_list"]])
         self.assertIn("The Agent Store listing is already live.", package["judge_demo_capture_plan"]["do_not_claim"])
@@ -471,6 +501,8 @@ class TrustBriefTests(unittest.TestCase):
         self.assertIn("Bundle freshness: fresh_public_head (fresh_for_public_demo=True)", rendered)
         self.assertIn("A2A Buyer Composability", rendered)
         self.assertIn("Live Commerce Evidence Manifest", rendered)
+        self.assertIn("Agent Store Listing Kit", rendered)
+        self.assertIn("agent_store_01_listing_overview.png", rendered)
         self.assertIn("Judge Demo Capture Plan", rendered)
         self.assertIn("01_public_repo_head.png", rendered)
         self.assertIn("No wallet action, DoraHacks submission, or live CROO order was performed", rendered)
@@ -528,6 +560,52 @@ def _submission_bundle_fixture():
             },
         },
         "offline_proof": {
+            "agent_store_listing_kit": {
+                "agent_store_listing_kit_schema_version": "1.0.0",
+                "readiness": {
+                    "dashboard_status": "ready_to_create_listing",
+                    "listing_copy_ready": True,
+                    "provider_env_ready": False,
+                    "missing_provider_env": [
+                        "CROO_API_URL",
+                        "CROO_WS_URL",
+                        "CROO_SDK_KEY",
+                    ],
+                },
+                "dashboard_copy": {
+                    "agent_name": "TrustBrief CAP Verifier",
+                    "service_name": "Verified Research Brief",
+                    "price_usdc": 1.0,
+                    "sla_minutes": 20,
+                    "repository_url": "https://github.com/vandit98/croo-trustbrief-agent",
+                },
+                "schema_paste_targets": [
+                    {"dashboard_field": "requirements_schema"},
+                    {"dashboard_field": "deliverable_schema"},
+                ],
+                "capture_contract": {
+                    "proof_fields": {
+                        "agent_store_listing_url": "",
+                        "croo_service_id": "",
+                    },
+                    "screenshot_files": [
+                        {
+                            "file_name": "agent_store_01_listing_overview.png",
+                            "must_show": "Agent name and published listing URL.",
+                        }
+                    ],
+                },
+                "safe_claims": [
+                    "The repository contains the exact Agent Store listing copy and schemas to paste.",
+                ],
+                "do_not_claim": [
+                    "The Agent Store listing is live before a listing URL and screenshot are captured.",
+                ],
+                "proof": {
+                    "listing_kit_hash": "k" * 64,
+                    "service_schema_sha256": "2" * 64,
+                },
+            },
             "buyer_composability": {
                 "correlation": {
                     "correlation_id": "tb-a2a-1234567890abcdef",

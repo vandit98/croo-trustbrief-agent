@@ -8,6 +8,7 @@ import subprocess
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Sequence
 
+from .agent_store_listing_kit import build_agent_store_listing_kit
 from .buyer_composability import build_buyer_composability_packet
 from .core import analyze_request, canonical_json, sha256_text
 from .live_commerce_evidence import build_live_commerce_evidence_manifest
@@ -199,6 +200,11 @@ def build_evidence_bundle(
         analysis_now=analysis_now,
         public_repo_state=public_repo_state,
     )
+    agent_store_listing_kit = build_agent_store_listing_kit(
+        service_schema_path=service_schema_path,
+        analysis_now=analysis_now,
+        public_repo_state=public_repo_state,
+    )
 
     bundle: Dict[str, Any] = {
         "bundle_schema_version": "1.0.0",
@@ -238,6 +244,7 @@ def build_evidence_bundle(
             "requester_demo": "python3 -m trustbrief_agent.requester_harness examples/sample_request.json --output outputs/requester_demo.json",
             "buyer_composability_demo": "python3 -m trustbrief_agent.buyer_composability examples/sample_request.json --output outputs/buyer_composability_demo.json",
             "live_commerce_evidence": "python3 -m trustbrief_agent.live_commerce_evidence examples/sample_request.json --output outputs/live_commerce_evidence.json",
+            "agent_store_listing_kit": "python3 -m trustbrief_agent.agent_store_listing_kit --output outputs/agent_store_listing_kit.json",
             "judge_bundle": "python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --output outputs/judge_bundle.json",
         },
         "validation": validation_results or {},
@@ -247,6 +254,7 @@ def build_evidence_bundle(
             "requester_demo": requester_demo,
             "buyer_composability": buyer_composability,
             "live_commerce_evidence": live_commerce_evidence,
+            "agent_store_listing_kit": agent_store_listing_kit,
             "consistency_checks": {
                 "report_hash_matches_transcript": report["proof"]["report_hash"] == cap_transcript["report_summary"]["report_hash"],
                 "source_bundle_hash_matches_transcript": report["proof"]["source_bundle_hash"] == cap_transcript["report_summary"]["source_bundle_hash"],
@@ -255,6 +263,9 @@ def build_evidence_bundle(
                 "live_manifest_report_hash_matches_report": live_commerce_evidence["hash_comparison"]["offline_preview_report_hash"] == report["proof"]["report_hash"],
                 "live_manifest_request_hash_matches_report_input": live_commerce_evidence["request_identity"]["report_input_hash"] == report["proof"]["input_hash"],
                 "live_manifest_no_wallet_action": live_commerce_evidence["safety"]["no_wallet_action_performed"],
+                "listing_kit_service_schema_matches_asset": agent_store_listing_kit["proof"]["service_schema_sha256"]
+                == sha256_text(service_schema_path.read_text(encoding="utf-8")),
+                "listing_kit_no_secret_capture": not agent_store_listing_kit["safety"]["records_secret_values"],
                 "local_commit_matches_public_head": artifact_freshness["local_commit_matches_public_head"],
                 "fresh_for_public_demo": artifact_freshness["fresh_for_public_demo"],
             },
@@ -290,6 +301,7 @@ def main() -> int:
     parser.add_argument("--requester-output", help="Optional path to also write the requester demo JSON.")
     parser.add_argument("--buyer-output", help="Optional path to also write the A2A buyer-composability JSON.")
     parser.add_argument("--live-commerce-output", help="Optional path to also write the live-commerce evidence manifest JSON.")
+    parser.add_argument("--listing-kit-output", help="Optional path to also write the Agent Store listing kit JSON.")
     parser.add_argument("--public-repo-url", help="Optional verified public repository URL.")
     parser.add_argument("--public-default-branch", help="Optional verified public default branch.")
     parser.add_argument("--public-visibility", help="Optional verified public repository visibility.")
@@ -365,6 +377,15 @@ def main() -> int:
         )
         _write_json(live_output_path, live_manifest)
         generated_paths.append(live_output_path)
+    if args.listing_kit_output:
+        listing_kit_output_path = Path(args.listing_kit_output)
+        listing_kit = build_agent_store_listing_kit(
+            service_schema_path=repo_root / "service_schema.json",
+            analysis_now=analysis_now,
+            public_repo_state=public_repo_state,
+        )
+        _write_json(listing_kit_output_path, listing_kit)
+        generated_paths.append(listing_kit_output_path)
 
     validation_results = {}
     if not args.skip_tests:

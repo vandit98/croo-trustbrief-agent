@@ -64,10 +64,14 @@ def build_submission_package(bundle: Dict[str, Any], *, bundle_path: Optional[Pa
     requester_demo = _require_dict(offline_proof, "requester_demo")
     buyer_composability = _require_dict(offline_proof, "buyer_composability")
     live_commerce_evidence = _require_dict(offline_proof, "live_commerce_evidence")
+    agent_store_listing_kit = _require_dict(offline_proof, "agent_store_listing_kit")
     buyer_correlation = _require_dict(buyer_composability, "correlation")
     buyer_decision = _require_dict(buyer_composability, "downstream_decision")
     buyer_actors = _require_dict(buyer_composability, "actors")
     live_manifest_proof = _require_dict(live_commerce_evidence, "proof")
+    listing_kit_proof = _require_dict(agent_store_listing_kit, "proof")
+    listing_kit_readiness = _require_dict(agent_store_listing_kit, "readiness")
+    listing_kit_capture = _require_dict(agent_store_listing_kit, "capture_contract")
     payment_authorization = _require_dict(live_commerce_evidence, "payment_authorization")
     hash_comparison = _require_dict(live_commerce_evidence, "hash_comparison")
     tap_identity = _require_dict(live_commerce_evidence, "tap_style_identity_intent")
@@ -345,10 +349,24 @@ def build_submission_package(bundle: Dict[str, Any], *, bundle_path: Optional[Pa
             "buyer_correlation_id": buyer_correlation.get("correlation_id", ""),
             "buyer_downstream_decision": buyer_decision.get("decision", ""),
             "live_commerce_manifest_hash": live_manifest_proof.get("manifest_hash", ""),
+            "agent_store_listing_kit_hash": listing_kit_proof.get("listing_kit_hash", ""),
             "live_payment_authorization_status": payment_authorization.get("status", ""),
             "live_hash_match_status": hash_comparison.get("match_status", ""),
             "key_asset_hashes": _key_asset_lines(judge_assets.get("key_asset_hashes", []) or []),
             "tests_passed": test_result.get("passed"),
+        },
+        "agent_store_listing_kit": {
+            "dashboard_status": listing_kit_readiness.get("dashboard_status", ""),
+            "listing_copy_ready": listing_kit_readiness.get("listing_copy_ready", False),
+            "provider_env_ready": listing_kit_readiness.get("provider_env_ready", False),
+            "missing_provider_env": listing_kit_readiness.get("missing_provider_env", []),
+            "listing_kit_hash": listing_kit_proof.get("listing_kit_hash", ""),
+            "dashboard_copy": _require_dict(agent_store_listing_kit, "dashboard_copy"),
+            "schema_paste_targets": agent_store_listing_kit.get("schema_paste_targets", []),
+            "proof_fields": listing_kit_capture.get("proof_fields", {}),
+            "screenshot_files": listing_kit_capture.get("screenshot_files", []),
+            "safe_claims": agent_store_listing_kit.get("safe_claims", []),
+            "do_not_claim": agent_store_listing_kit.get("do_not_claim", []),
         },
         "a2a_buyer_composability": {
             "correlation_id": buyer_correlation.get("correlation_id", ""),
@@ -391,6 +409,7 @@ def render_submission_markdown(package: Dict[str, Any]) -> str:
     copy = _require_dict(package, "dorahacks_buidl_copy")
     capture_plan = _require_dict(package, "judge_demo_capture_plan")
     source = _require_dict(package, "source_hash_block")
+    listing_kit = _require_dict(package, "agent_store_listing_kit")
     buyer = _require_dict(package, "a2a_buyer_composability")
     live_manifest = _require_dict(package, "live_commerce_evidence")
     live_slot = _require_dict(package, "credentialed_live_proof_slot")
@@ -497,6 +516,7 @@ def render_submission_markdown(package: Dict[str, Any]) -> str:
             "- Buyer correlation ID: {}".format(source.get("buyer_correlation_id", "")),
             "- Buyer downstream decision: {}".format(source.get("buyer_downstream_decision", "")),
             "- Live commerce manifest hash: {}".format(source.get("live_commerce_manifest_hash", "")),
+            "- Agent Store listing kit hash: {}".format(source.get("agent_store_listing_kit_hash", "")),
             "- Live payment authorization status: {}".format(source.get("live_payment_authorization_status", "")),
             "- Live hash match status: {}".format(source.get("live_hash_match_status", "")),
             "- Tests passed: {}".format(source.get("tests_passed", "")),
@@ -507,6 +527,37 @@ def render_submission_markdown(package: Dict[str, Any]) -> str:
     )
     for line in source.get("key_asset_hashes", []) or []:
         lines.append("- {}".format(line))
+
+    dashboard_copy = _require_dict(listing_kit, "dashboard_copy")
+    lines.extend(
+        [
+            "",
+            "## Agent Store Listing Kit",
+            "",
+            "- Dashboard status: {}".format(listing_kit.get("dashboard_status", "")),
+            "- Listing copy ready: {}".format(listing_kit.get("listing_copy_ready", False)),
+            "- Provider env ready: {}".format(listing_kit.get("provider_env_ready", False)),
+            "- Listing kit hash: {}".format(listing_kit.get("listing_kit_hash", "")),
+            "- Agent name: {}".format(dashboard_copy.get("agent_name", "")),
+            "- Service name: {}".format(dashboard_copy.get("service_name", "")),
+            "- Price USDC: {}".format(dashboard_copy.get("price_usdc", "")),
+            "- SLA minutes: {}".format(dashboard_copy.get("sla_minutes", "")),
+            "- Repository URL: {}".format(dashboard_copy.get("repository_url", "")),
+        ]
+    )
+    missing_provider_env = listing_kit.get("missing_provider_env", []) or []
+    if missing_provider_env:
+        lines.append("- Missing provider env: {}".format(", ".join(missing_provider_env)))
+
+    lines.extend(["", "### Listing Screenshots", ""])
+    for shot in listing_kit.get("screenshot_files", []) or []:
+        if not isinstance(shot, dict):
+            continue
+        lines.append("- {}: {}".format(shot.get("file_name", ""), shot.get("must_show", "")))
+
+    lines.extend(["", "### Listing Kit Do Not Claim", ""])
+    for item in listing_kit.get("do_not_claim", []) or []:
+        lines.append("- {}".format(item))
 
     lines.extend(
         [

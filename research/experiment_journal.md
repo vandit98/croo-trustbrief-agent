@@ -730,3 +730,62 @@ python3 -m trustbrief_agent.submission_package --bundle outputs/judge_bundle.jso
 ### Next action
 
 Commit and push the judge-demo capture plan to `main`, then regenerate `outputs/judge_bundle.json`, `outputs/live_commerce_evidence.json`, and `outputs/dorahacks_demo_package.md/json` with the new public head. If CROO credentials, requester funding, and explicit payment authorization become available, supersede further offline packaging with one real Agent Store listing plus paid-order proof chain.
+
+## 2026-06-30 Run - Agent Store Listing Kit
+
+### Chosen target
+
+Strengthen the Agent Store submission assets by adding a generated listing kit. Live CROO listing, payment, and DoraHacks actions remained blocked by missing credentials and missing explicit payment authorization, so the highest-upside unblocked target was to make the first manual Agent Store setup deterministic and judge-visible.
+
+### Exact changes
+
+- Added `trustbrief_agent/agent_store_listing_kit.py`, which turns `service_schema.json` into dashboard copy, schema paste targets, screenshot filenames, proof fields, provider-env readiness, safe claims, and "do not claim" guardrails.
+- Integrated the listing kit into `trustbrief_agent/evidence_bundle.py` with `--listing-kit-output`, generated-artifact hashing, embedded offline proof, and consistency checks proving the kit matches `service_schema.json` and does not record secret values.
+- Extended `trustbrief_agent/submission_package.py` so `outputs/dorahacks_demo_package.md/json` includes an `Agent Store Listing Kit` section with dashboard readiness, listing hash, proof screenshots, missing provider env names, and live-claim guardrails.
+- Updated `README.md`, `DEMO_SCRIPT.md`, and `HACKATHON_SUBMISSION.md` so the default demo flow generates and shows `outputs/agent_store_listing_kit.json`.
+- Added focused unit tests for standalone listing-kit generation, bundle consistency, and rendered package output.
+
+### Commands run
+
+```bash
+git status --short --branch
+git fetch --prune origin main
+GIT_TERMINAL_PROMPT=0 git ls-remote https://github.com/vandit98/croo-trustbrief-agent.git refs/heads/main
+python3 - <<'PY'
+import os
+prefixes=('CROO_','TRUSTBRIEF_','OPENAI_','KAGGLE_')
+names=[k for k in os.environ if k.startswith(prefixes)]
+print('MATCHING_ENV_NAMES=' + (','.join(sorted(names)) if names else 'NO_MATCHING_ENV_NAMES'))
+PY
+/Users/vandit/.pyenv/shims/kaggle competitions list -s croo-ai-agent-hackathon-10-k-usd-prize-pool
+/Users/vandit/.pyenv/shims/kaggle competitions submissions croo-ai-agent-hackathon-10-k-usd-prize-pool
+/Users/vandit/.pyenv/shims/kaggle competitions files croo-ai-agent-hackathon-10-k-usd-prize-pool
+python3 -m py_compile trustbrief_agent/agent_store_listing_kit.py trustbrief_agent/evidence_bundle.py trustbrief_agent/submission_package.py tests/test_trustbrief.py
+python3 -m unittest discover -s tests -p 'test_*.py'
+python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --report-output outputs/demo_report.json --mock-output outputs/mock_cap_demo.json --requester-output outputs/requester_demo.json --buyer-output outputs/buyer_composability_demo.json --live-commerce-output outputs/live_commerce_evidence.json --listing-kit-output outputs/agent_store_listing_kit.json --public-repo-url https://github.com/vandit98/croo-trustbrief-agent --public-default-branch main --public-visibility public --public-head-commit 2dfdaadf3884438ef57538bc76c9a33ce58ee44b --public-head-url https://github.com/vandit98/croo-trustbrief-agent/commit/2dfdaadf3884438ef57538bc76c9a33ce58ee44b --public-verification-source "git ls-remote" --output outputs/judge_bundle.json
+python3 -m trustbrief_agent.submission_package --bundle outputs/judge_bundle.json --output outputs/dorahacks_demo_package.md --json-output outputs/dorahacks_demo_package.json
+```
+
+### Results
+
+- Public `main` before editing was verified at `2dfdaadf3884438ef57538bc76c9a33ce58ee44b`, and local `HEAD` matched it.
+- Kaggle remains open with deadline `2026-07-12 16:00:00`, reward `10,000 Usd`, `teamCount=8`, and `userHasEntered=True`; submissions still report `No submissions found`; competition files still only list `NOTE.md`.
+- No matching `CROO_*`, `TRUSTBRIEF_*`, `OPENAI_*`, or `KAGGLE_*` environment variable names were present, so no live provider, wallet/payment, Agent Store, or DoraHacks action was attempted.
+- `python3 -m unittest discover -s tests -p 'test_*.py'` -> `Ran 16 tests in 0.102s ... OK`.
+- Pre-commit bundle/package smoke passed:
+  - `outputs/agent_store_listing_kit.json.proof.listing_kit_hash=facddb37a70b3408eb6039ba9f519ff4e490b99312a540d4ff6452d18d8f6377`
+  - `outputs/agent_store_listing_kit.json.readiness.listing_copy_ready=true`
+  - `outputs/agent_store_listing_kit.json.readiness.provider_env_ready=false`
+  - missing provider env names were `CROO_API_URL`, `CROO_WS_URL`, `CROO_SDK_KEY`, `CROO_AGENT_ID`, and `CROO_SERVICE_ID`
+  - `outputs/judge_bundle.json.artifact_freshness.status=tracked_files_dirty`, `fresh_for_public_demo=false`, and `validation.tests.passed=true`, as expected before commit
+  - `outputs/dorahacks_demo_package.json.agent_store_listing_kit.listing_kit_hash=facddb37a70b3408eb6039ba9f519ff4e490b99312a540d4ff6452d18d8f6377`
+
+### Blockers
+
+- Live CROO proof remains blocked by missing dashboard/API credentials, provider SDK key, requester SDK key, provider service ID, requester AA-wallet funding, and explicit payment authorization.
+- DoraHacks filing remains blocked by manual login/human verification.
+- The pre-commit generated bundle is intentionally not fresh for public demo until this commit is pushed and ignored local artifacts are regenerated against the new public head.
+
+### Next action
+
+Commit and push the Agent Store listing kit to `main`, then regenerate `outputs/judge_bundle.json`, `outputs/agent_store_listing_kit.json`, and `outputs/dorahacks_demo_package.md/json` with the new public head. If CROO credentials, requester funding, and explicit payment authorization become available, use the listing kit plus live-commerce manifest to capture one real Agent Store listing and paid-order proof chain.

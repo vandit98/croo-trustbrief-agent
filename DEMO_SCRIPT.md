@@ -26,6 +26,7 @@ python3 -m trustbrief_agent.evidence_bundle \
   --requester-output outputs/requester_demo.json \
   --buyer-output outputs/buyer_composability_demo.json \
   --live-commerce-output outputs/live_commerce_evidence.json \
+  --listing-kit-output outputs/agent_store_listing_kit.json \
   --public-head-commit <verified-public-head-sha> \
   --public-head-url https://github.com/vandit98/croo-trustbrief-agent/commit/<verified-public-head-sha> \
   --public-verified-at <verified-at-iso8601> \
@@ -51,6 +52,7 @@ Open the report and show:
 - `requester_demo.json` showing request-schema validation, live-order gate checks, provider launch command, and the exact proof artifacts still needed from CROO
 - `buyer_composability_demo.json` showing the buyer-agent correlation ID, TrustBrief report hash, downstream purchase decision, and reserved live CAP/payment fields
 - `live_commerce_evidence.json` showing payment authorization status, CAP lifecycle slots, x402 payment states, TAP identity/intent fields, and the offline-vs-live report hash comparison rule
+- `agent_store_listing_kit.json` showing the exact dashboard copy, schema paste targets, listing screenshots, proof fields, and no-secret guardrails for CROO Agent Store setup
 - `judge_bundle.json` showing the combined proof package, generated artifact hashes, unit-test pass result, and current repo commit
 - `judge_bundle.json.public_repo_state` plus `artifact_freshness` showing the verified public `main` head, whether tracked files were dirty, and whether the bundle is fresh for the public demo
 
@@ -69,7 +71,7 @@ Explain:
 
 "A buyer agent can call TrustBrief as a dependency before making a purchase. The output is not just a summary; it is a machine-readable provenance object with source hashes and claim-level evidence."
 
-Show `outputs/buyer_composability_demo.json` and `outputs/live_commerce_evidence.json`.
+Show `outputs/buyer_composability_demo.json`, `outputs/live_commerce_evidence.json`, and `outputs/agent_store_listing_kit.json`.
 
 - `correlation.correlation_id`
 - `correlation.trustbrief_report_hash`
@@ -78,9 +80,11 @@ Show `outputs/buyer_composability_demo.json` and `outputs/live_commerce_evidence
 - `cap_lifecycle` phases for `Negotiate`, `Lock`, `Deliver`, and `Clear`
 - `payment_authorization.status`
 - `hash_comparison.match_status`
+- `dashboard_copy.agent_name`
+- `capture_contract.screenshot_files`
 
 ## 4:20-5:00 - Close
 
-"The core works without secrets. To go live, register the provider in CROO Agent Store, paste the schema from this repo, set the SDK key, and start the provider. From there every paid request settles through CAP, and the buyer packet is where the live order IDs, delivery tx hash, and downstream decision proof will land."
+"The core works without secrets. To go live, register the provider in CROO Agent Store using the listing kit, paste the schema from this repo, set the SDK key, and start the provider. From there every paid request settles through CAP, and the buyer packet is where the live order IDs, delivery tx hash, and downstream decision proof will land."
 
 Use the generated "Judge Demo Capture Plan" section in `outputs/dorahacks_demo_package.md` as the recording checklist. It gives the exact screenshot names and spoken claims while preserving the no-live-order/no-DoraHacks-submission guardrails.
