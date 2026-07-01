@@ -42,6 +42,7 @@ python3 -m trustbrief_agent.submission_package \
 Open the report and show:
 
 - `dorahacks_demo_package.md` showing the BUIDL copy, 5-minute recording sequence, screenshot checklist, source/hash block, and credentialed live-proof slot
+- `dorahacks_demo_package.md` showing the DoraHacks submission-readiness section with exact form values, manual upload steps, and fields to leave blank until live proof exists
 - `dorahacks_demo_package.md` showing the judge demo capture plan with screenshot filenames, safe spoken claims, and claims to avoid before live proof exists
 - `recommendation`
 - `claim_assessments`

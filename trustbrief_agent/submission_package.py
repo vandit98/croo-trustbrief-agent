@@ -336,6 +336,168 @@ def build_submission_package(bundle: Dict[str, Any], *, bundle_path: Optional[Pa
                 ],
             },
         },
+        "dorahacks_submission_readiness": {
+            "status": (
+                "ready_for_offline_buidl_draft"
+                if freshness.get("fresh_for_public_demo") and test_result.get("passed")
+                else "regenerate_before_buidl_draft"
+            ),
+            "form_values": [
+                {
+                    "field": "BUIDL name",
+                    "value": listing.get("agent_name", "TrustBrief CAP Verifier"),
+                    "source": "service_schema.json.agent_store_listing.agent_name",
+                    "status": "ready_to_paste",
+                },
+                {
+                    "field": "One-liner",
+                    "value": (
+                        "Paid CROO Agent Store verification service that returns claim-level due-diligence briefs "
+                        "with source hashes, risk flags, and CAP schema delivery."
+                    ),
+                    "source": "dorahacks_buidl_copy.one_liner",
+                    "status": "ready_to_paste",
+                },
+                {
+                    "field": "Tracks",
+                    "value": tracks,
+                    "source": "service_schema.json.agent_store_listing.tracks",
+                    "status": "ready_to_paste" if tracks else "missing_tracks",
+                },
+                {
+                    "field": "Repository URL",
+                    "value": repo_url,
+                    "source": "public_repo_state.repository_url",
+                    "status": "ready_to_paste" if repo_url else "missing_public_repo_url",
+                },
+                {
+                    "field": "Problem",
+                    "value": (
+                        "Agents can spend money or trust marketplace services before checking the evidence behind a claim. "
+                        "Plain summaries are hard for another agent or judge to audit."
+                    ),
+                    "source": "dorahacks_buidl_copy.problem",
+                    "status": "ready_to_paste",
+                },
+                {
+                    "field": "Solution",
+                    "value": (
+                        "TrustBrief accepts a task, subject, claims, and sources, then returns structured JSON with "
+                        "claim assessments, evidence snippets, SHA-256 source provenance, risk flags, and a stable report hash."
+                    ),
+                    "source": "dorahacks_buidl_copy.solution",
+                    "status": "ready_to_paste",
+                },
+                {
+                    "field": "CROO integration",
+                    "value": (
+                        "The live provider uses CROO AgentClient handlers for NEGOTIATION_CREATED and ORDER_PAID, accepts "
+                        "the negotiation, generates the report, and delivers a schema payload through CAP."
+                    ),
+                    "source": "dorahacks_buidl_copy.croo_integration",
+                    "status": "ready_to_paste",
+                },
+                {
+                    "field": "Demo video URL",
+                    "value": "",
+                    "source": "manual video upload after recording",
+                    "status": "leave_blank_until_uploaded",
+                },
+                {
+                    "field": "CROO Agent Store listing URL",
+                    "value": "",
+                    "source": "credentialed Agent Store dashboard",
+                    "status": "leave_blank_until_live_listing_exists",
+                },
+                {
+                    "field": "Live paid-order proof",
+                    "value": "",
+                    "source": "credentialed CAP order capture",
+                    "status": "leave_blank_until_live_order_exists",
+                },
+            ],
+            "evidence_to_attach_or_show": [
+                {
+                    "artifact": "outputs/dorahacks_demo_package.md",
+                    "purpose": "Paste-ready BUIDL copy, runbook, screenshot list, source/hash block, and live-proof slot.",
+                    "status": "ready" if freshness.get("fresh_for_public_demo") else "regenerate_before_use",
+                },
+                {
+                    "artifact": "outputs/judge_bundle.json",
+                    "purpose": "Fresh public-head proof with tests, report hash, bundle hash, and generated artifact hashes.",
+                    "status": "ready" if freshness.get("fresh_for_public_demo") else "regenerate_before_use",
+                },
+                {
+                    "artifact": "outputs/agent_store_listing_kit.json",
+                    "purpose": "Dashboard copy, schema paste targets, listing screenshots, and no-secret guardrails.",
+                    "status": "ready" if listing_kit_proof.get("listing_kit_hash") else "missing_listing_kit",
+                },
+                {
+                    "artifact": "outputs/live_commerce_evidence.json",
+                    "purpose": "Credentialed paid-order capture contract with payment authorization and CAP lifecycle fields.",
+                    "status": "ready" if live_manifest_proof.get("manifest_hash") else "missing_live_manifest",
+                },
+            ],
+            "manual_submission_steps": [
+                "Record the five-minute demo using judge_demo_capture_plan.shot_list.",
+                "Upload the video and paste the resulting URL into the DoraHacks video field.",
+                "Paste form_values with status ready_to_paste into the DoraHacks BUIDL form.",
+                "Attach or show the evidence artifacts listed in evidence_to_attach_or_show.",
+                "Leave live listing and paid-order fields blank unless real Agent Store and CAP proof exists.",
+                "Submit only after reviewing the no-live-claim guardrails and secret-redaction checks.",
+            ],
+            "leave_blank_until_live_proof": [
+                {
+                    "field": "CROO Agent Store listing URL",
+                    "required_evidence": "Published listing page plus agent_store_01_listing_overview.png.",
+                },
+                {
+                    "field": "Provider online proof",
+                    "required_evidence": "Redacted provider dashboard or log screenshot with CROO agent and service IDs.",
+                },
+                {
+                    "field": "Paid-order transaction proof",
+                    "required_evidence": "Real negotiation_id, order_id, payment or escrow hash, delivery hash, and settlement state.",
+                },
+                {
+                    "field": "Delivered report hash",
+                    "required_evidence": "Live delivered report hash matching the offline preview or a documented delta reason.",
+                },
+            ],
+            "pre_submit_checks": [
+                {
+                    "check": "Public repo is visible and hash-pinned",
+                    "passed": bool(repo_url and public_repo_state.get("head_commit")),
+                    "evidence": public_repo_state.get("head_commit", ""),
+                },
+                {
+                    "check": "Generated bundle is fresh for public demo",
+                    "passed": bool(freshness.get("fresh_for_public_demo")),
+                    "evidence": freshness.get("status", ""),
+                },
+                {
+                    "check": "Focused unit tests passed",
+                    "passed": bool(test_result.get("passed")),
+                    "evidence": test_result.get("command", ""),
+                },
+                {
+                    "check": "Live proof is not overstated",
+                    "passed": bool(blocked_reasons),
+                    "evidence": "blocked_by_credentials" if blocked_reasons else "ready_to_attempt",
+                },
+                {
+                    "check": "No wallet or DoraHacks action is claimed by generated artifacts",
+                    "passed": True,
+                    "evidence": "offline generator only",
+                },
+            ],
+            "positioning_notes": [
+                "Lead with pre-spend verification for buyer agents, not generic trust-chatbot language.",
+                "Use source hashes, claim verdicts, and report hash as the judging differentiator.",
+                "Frame CAP as the paid delivery rail and show the exact fields that will prove the first live order.",
+                "Mention that live listing/payment proof remains blank until credentials and authorization exist.",
+            ],
+        },
         "source_hash_block": {
             "repository_url": repo_url,
             "local_commit": repo_state.get("commit", ""),
@@ -407,6 +569,7 @@ def build_submission_package(bundle: Dict[str, Any], *, bundle_path: Optional[Pa
 
 def render_submission_markdown(package: Dict[str, Any]) -> str:
     copy = _require_dict(package, "dorahacks_buidl_copy")
+    readiness = _require_dict(package, "dorahacks_submission_readiness")
     capture_plan = _require_dict(package, "judge_demo_capture_plan")
     source = _require_dict(package, "source_hash_block")
     listing_kit = _require_dict(package, "agent_store_listing_kit")
@@ -444,9 +607,55 @@ def render_submission_markdown(package: Dict[str, Any]) -> str:
         str(copy.get("demo_command", "")),
         "```",
         "",
-        "## Five-Minute Runbook",
+        "## DoraHacks Submission Readiness",
+        "",
+        "- Status: {}".format(readiness.get("status", "")),
+        "",
+        "### Form Values",
         "",
     ]
+
+    for item in readiness.get("form_values", []) or []:
+        if not isinstance(item, dict):
+            continue
+        value = item.get("value", "")
+        if isinstance(value, list):
+            value = ", ".join(str(part) for part in value)
+        lines.append("- [{}] {}: {}".format(item.get("status", ""), item.get("field", ""), value))
+
+    lines.extend(["", "### Evidence To Attach Or Show", ""])
+    for item in readiness.get("evidence_to_attach_or_show", []) or []:
+        if not isinstance(item, dict):
+            continue
+        lines.append("- [{}] {}: {}".format(item.get("status", ""), item.get("artifact", ""), item.get("purpose", "")))
+
+    lines.extend(["", "### Manual Submission Steps", ""])
+    for item in readiness.get("manual_submission_steps", []) or []:
+        lines.append("- {}".format(item))
+
+    lines.extend(["", "### Leave Blank Until Live Proof", ""])
+    for item in readiness.get("leave_blank_until_live_proof", []) or []:
+        if not isinstance(item, dict):
+            continue
+        lines.append("- {}: {}".format(item.get("field", ""), item.get("required_evidence", "")))
+
+    lines.extend(["", "### Pre-Submit Checks", ""])
+    for item in readiness.get("pre_submit_checks", []) or []:
+        if not isinstance(item, dict):
+            continue
+        lines.append("- [{}] {}: {}".format(item.get("passed", False), item.get("check", ""), item.get("evidence", "")))
+
+    lines.extend(["", "### Positioning Notes", ""])
+    for item in readiness.get("positioning_notes", []) or []:
+        lines.append("- {}".format(item))
+
+    lines.extend(
+        [
+            "",
+            "## Five-Minute Runbook",
+            "",
+        ]
+    )
 
     for item in package.get("five_minute_runbook", []):
         if not isinstance(item, dict):

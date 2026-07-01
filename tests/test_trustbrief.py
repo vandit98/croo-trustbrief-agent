@@ -475,6 +475,19 @@ class TrustBriefTests(unittest.TestCase):
         self.assertEqual(package["package_schema_version"], "1.0.0")
         self.assertEqual(package["dorahacks_buidl_copy"]["project_name"], "TrustBrief CAP Verifier")
         self.assertEqual(package["dorahacks_buidl_copy"]["live_proof_status"], "blocked_by_credentials")
+        self.assertEqual(package["dorahacks_submission_readiness"]["status"], "ready_for_offline_buidl_draft")
+        self.assertIn(
+            "Demo video URL",
+            [item["field"] for item in package["dorahacks_submission_readiness"]["form_values"]],
+        )
+        self.assertIn(
+            "outputs/judge_bundle.json",
+            [item["artifact"] for item in package["dorahacks_submission_readiness"]["evidence_to_attach_or_show"]],
+        )
+        self.assertIn(
+            "CROO Agent Store listing URL",
+            [item["field"] for item in package["dorahacks_submission_readiness"]["leave_blank_until_live_proof"]],
+        )
         self.assertTrue(package["source_bundle"]["fresh_for_public_demo"])
         self.assertEqual(package["source_hash_block"]["public_head_commit"], "abc123")
         self.assertTrue(package["source_hash_block"]["tests_passed"])
@@ -498,6 +511,9 @@ class TrustBriefTests(unittest.TestCase):
 
         self.assertIn("# DoraHacks Demo Package", rendered)
         self.assertIn("TrustBrief CAP Verifier", rendered)
+        self.assertIn("DoraHacks Submission Readiness", rendered)
+        self.assertIn("Demo video URL", rendered)
+        self.assertIn("Leave Blank Until Live Proof", rendered)
         self.assertIn("Bundle freshness: fresh_public_head (fresh_for_public_demo=True)", rendered)
         self.assertIn("A2A Buyer Composability", rendered)
         self.assertIn("Live Commerce Evidence Manifest", rendered)

@@ -70,7 +70,7 @@ Inspect `outputs/buyer_composability_demo.json` for the buyer-agent pre-spend ga
 Inspect `outputs/live_commerce_evidence.json` for the payment authorization checklist, AP2-style intent fields, x402 payment states, TAP-style identity/intent fields, CAP lifecycle capture slots, and offline-vs-live report hash comparison rule.
 Inspect `outputs/agent_store_listing_kit.json` for Agent Store dashboard copy, schema paste targets, screenshot filenames, proof fields, provider-env gates, and no-secret/no-live-claim guardrails.
 Inspect `outputs/judge_bundle.json` for one bundled artifact that includes the report, mock CAP transcript, local git evidence, public-head freshness status, unit-test results, and hashes for the generated judge artifacts.
-Inspect `outputs/dorahacks_demo_package.md` for paste-ready BUIDL copy, a 5-minute recording runbook, screenshot checklist, judge demo capture plan, source/hash block, and the credentialed live-proof slot that remains blocked until CROO dashboard/payment credentials exist.
+Inspect `outputs/dorahacks_demo_package.md` for paste-ready BUIDL copy, DoraHacks form values, manual submission steps, a 5-minute recording runbook, screenshot checklist, judge demo capture plan, source/hash block, and the credentialed live-proof slot that remains blocked until CROO dashboard/payment credentials exist.
 
 ## Live CROO Provider
 
@@ -180,6 +180,7 @@ This makes it easier to attach one artifact to a demo folder or screen recording
 `trustbrief_agent/submission_package.py` turns the judge bundle into the final submission-facing material:
 
 - BUIDL copy for DoraHacks fields
+- DoraHacks submission-readiness checks with exact form values, manual upload steps, and live-proof fields to leave blank
 - 5-minute demo runbook
 - screenshot checklist
 - judge demo capture plan with exact screenshot filenames, safe spoken claims, and "do not claim" guardrails
