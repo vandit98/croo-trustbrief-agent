@@ -40,6 +40,10 @@ python3 -m trustbrief_agent.submission_package \
   --bundle outputs/judge_bundle.json \
   --output outputs/dorahacks_demo_package.md \
   --json-output outputs/dorahacks_demo_package.json
+python3 -m trustbrief_agent.demo_capture_pack \
+  --package outputs/dorahacks_demo_package.json \
+  --output outputs/demo_capture_pack.md \
+  --json-output outputs/demo_capture_pack.json
 ```
 
 Or refresh the full judge pack in one command:
@@ -71,6 +75,7 @@ Inspect `outputs/live_commerce_evidence.json` for the payment authorization chec
 Inspect `outputs/agent_store_listing_kit.json` for Agent Store dashboard copy, schema paste targets, screenshot filenames, proof fields, provider-env gates, and no-secret/no-live-claim guardrails.
 Inspect `outputs/judge_bundle.json` for one bundled artifact that includes the report, mock CAP transcript, local git evidence, public-head freshness status, unit-test results, and hashes for the generated judge artifacts.
 Inspect `outputs/dorahacks_demo_package.md` for paste-ready BUIDL copy, DoraHacks form values, manual submission steps, a 5-minute recording runbook, screenshot checklist, judge demo capture plan, source/hash block, and the credentialed live-proof slot that remains blocked until CROO dashboard/payment credentials exist.
+Inspect `outputs/demo_capture_pack.md` for the compact recording checklist, exact regeneration commands, screenshot filenames, DoraHacks form values, source/hash block, live-proof blanks, and final manual login/video-upload checklist.
 
 ## Live CROO Provider
 
@@ -198,6 +203,26 @@ python3 -m trustbrief_agent.submission_package \
 ```
 
 The package is intentionally generated from evidence already present in `outputs/judge_bundle.json`; it does not submit to DoraHacks, perform wallet actions, or claim a live CROO paid order.
+
+## Demo Capture Pack
+
+`trustbrief_agent/demo_capture_pack.py` extracts the long DoraHacks package into a compact recording and manual-submit checklist:
+
+- exact commands to verify the public head and regenerate the bundle, package, and capture pack
+- five-minute voiceover beats plus screenshot filenames from the judge demo capture plan
+- DoraHacks form values, source/hash block, live-proof blanks, and final upload checklist
+- safe spoken claims and "do not claim" guardrails for credential-gated proof
+
+Generate it after `outputs/dorahacks_demo_package.json` is fresh:
+
+```bash
+python3 -m trustbrief_agent.demo_capture_pack \
+  --package outputs/dorahacks_demo_package.json \
+  --output outputs/demo_capture_pack.md \
+  --json-output outputs/demo_capture_pack.json
+```
+
+The capture pack is a recording aid only. It does not log in to DoraHacks, perform wallet actions, or claim a live CROO order.
 
 ## Agent Store Service Setup
 

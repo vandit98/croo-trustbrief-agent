@@ -129,6 +129,7 @@ def build_submission_package(bundle: Dict[str, Any], *, bundle_path: Optional[Pa
                 "--requester-output outputs/requester_demo.json "
                 "--buyer-output outputs/buyer_composability_demo.json "
                 "--live-commerce-output outputs/live_commerce_evidence.json "
+                "--listing-kit-output outputs/agent_store_listing_kit.json "
                 "--output outputs/judge_bundle.json"
             ),
             "live_proof_status": "blocked_by_credentials" if blocked_reasons else "ready_to_attempt",

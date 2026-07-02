@@ -37,10 +37,16 @@ python3 -m trustbrief_agent.submission_package \
   --bundle outputs/judge_bundle.json \
   --output outputs/dorahacks_demo_package.md \
   --json-output outputs/dorahacks_demo_package.json
+
+python3 -m trustbrief_agent.demo_capture_pack \
+  --package outputs/dorahacks_demo_package.json \
+  --output outputs/demo_capture_pack.md \
+  --json-output outputs/demo_capture_pack.json
 ```
 
 Open the report and show:
 
+- `demo_capture_pack.md` showing the exact regeneration commands, screenshot filenames, recording sequence, DoraHacks form values, source/hash block, live-proof blanks, and final manual login/video-upload checklist
 - `dorahacks_demo_package.md` showing the BUIDL copy, 5-minute recording sequence, screenshot checklist, source/hash block, and credentialed live-proof slot
 - `dorahacks_demo_package.md` showing the DoraHacks submission-readiness section with exact form values, manual upload steps, and fields to leave blank until live proof exists
 - `dorahacks_demo_package.md` showing the judge demo capture plan with screenshot filenames, safe spoken claims, and claims to avoid before live proof exists
@@ -88,4 +94,4 @@ Show `outputs/buyer_composability_demo.json`, `outputs/live_commerce_evidence.js
 
 "The core works without secrets. To go live, register the provider in CROO Agent Store using the listing kit, paste the schema from this repo, set the SDK key, and start the provider. From there every paid request settles through CAP, and the buyer packet is where the live order IDs, delivery tx hash, and downstream decision proof will land."
 
-Use the generated "Judge Demo Capture Plan" section in `outputs/dorahacks_demo_package.md` as the recording checklist. It gives the exact screenshot names and spoken claims while preserving the no-live-order/no-DoraHacks-submission guardrails.
+Use `outputs/demo_capture_pack.md` as the compact recording checklist. It extracts the screenshot names, spoken claims, form values, live-proof blanks, and final upload gates while preserving the no-live-order/no-DoraHacks-submission guardrails.

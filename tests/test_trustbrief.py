@@ -10,6 +10,7 @@ from trustbrief_agent.agent_store_listing_kit import build_agent_store_listing_k
 from trustbrief_agent.buyer_composability import build_buyer_composability_packet
 from trustbrief_agent.cap_provider import build_delivery_request, handle_negotiation_created, handle_order_paid
 from trustbrief_agent.core import analyze_request, evaluate_claim, load_source
+from trustbrief_agent.demo_capture_pack import build_demo_capture_pack, render_demo_capture_markdown
 from trustbrief_agent.evidence_bundle import _build_artifact_freshness, build_evidence_bundle
 from trustbrief_agent.live_commerce_evidence import build_live_commerce_evidence_manifest
 from trustbrief_agent.mock_cap_harness import run_mock_cap_flow
@@ -526,6 +527,48 @@ class TrustBriefTests(unittest.TestCase):
         self.assertIn("pending_live_delivery", rendered)
         self.assertIn("Missing CROO runtime env vars", rendered)
         self.assertIn("paid_order_chain", rendered)
+        self.assertIn("The Agent Store listing is already live.", rendered)
+        self.assertNotIn("live paid order complete", rendered.lower())
+
+    def test_demo_capture_pack_extracts_recording_ready_checklist(self):
+        package = build_submission_package(_submission_bundle_fixture(), bundle_path=Path("outputs/judge_bundle.json"))
+        pack = build_demo_capture_pack(package, package_path=Path("outputs/dorahacks_demo_package.json"))
+
+        self.assertEqual(pack["demo_capture_pack_schema_version"], "1.0.0")
+        self.assertTrue(pack["ready_to_record"])
+        self.assertEqual(pack["source_package"]["path"], "outputs/dorahacks_demo_package.json")
+        self.assertIn(
+            "regenerate_capture_pack",
+            [item["name"] for item in pack["regeneration_commands"]],
+        )
+        self.assertIn("01_public_repo_head.png", pack["screenshot_filenames"]["capture_plan"])
+        self.assertIn("agent_store_01_listing_overview.png", pack["screenshot_filenames"]["agent_store_listing"])
+        self.assertIn(
+            "Demo video URL",
+            [item["field"] for item in pack["dorahacks_form_values"]],
+        )
+        self.assertIn(
+            "CROO Agent Store listing URL",
+            [item["field"] for item in pack["live_proof_blanks"]["form_fields"]],
+        )
+        self.assertIn("paid_order_chain", pack["blocked_live_proof"]["proof_targets"])
+        self.assertIn(
+            "Log in to DoraHacks with the authorized account.",
+            pack["manual_login_video_upload_checklist"],
+        )
+        self.assertIn("The Agent Store listing is already live.", pack["safety_guardrails"]["do_not_claim"])
+
+    def test_demo_capture_pack_markdown_keeps_manual_gates_visible(self):
+        package = build_submission_package(_submission_bundle_fixture())
+        rendered = render_demo_capture_markdown(build_demo_capture_pack(package))
+
+        self.assertIn("# TrustBrief Demo Capture Pack", rendered)
+        self.assertIn("python3 -m trustbrief_agent.demo_capture_pack", rendered)
+        self.assertIn("01_public_repo_head.png", rendered)
+        self.assertIn("DoraHacks Form Values", rendered)
+        self.assertIn("CROO Agent Store listing URL", rendered)
+        self.assertIn("Manual Login And Upload Checklist", rendered)
+        self.assertIn("No wallet action, DoraHacks submission, or live CROO order is performed", rendered)
         self.assertIn("The Agent Store listing is already live.", rendered)
         self.assertNotIn("live paid order complete", rendered.lower())
 

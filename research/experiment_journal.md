@@ -857,3 +857,75 @@ python3 -m trustbrief_agent.submission_package --bundle outputs/judge_bundle.jso
 ### Next action
 
 Commit and push the DoraHacks submission-readiness pass to `main`, then regenerate `outputs/judge_bundle.json`, `outputs/dorahacks_demo_package.md/json`, `outputs/agent_store_listing_kit.json`, and `outputs/live_commerce_evidence.json` with the new public head. If CROO credentials, requester funding, and explicit payment authorization become available, supersede further offline packaging with one real Agent Store listing and paid-order proof chain.
+
+## 2026-07-02 Run - Daily Planner Refresh
+
+### Planner result
+
+- Kaggle remains open for `croo-ai-agent-hackathon-10-k-usd-prize-pool`: `/Users/vandit/.pyenv/shims/kaggle competitions list -s croo-ai-agent-hackathon-10-k-usd-prize-pool` reports deadline `2026-07-12 16:00:00`, reward `10,000 Usd`, `teamCount=8`, and `userHasEntered=True`.
+- Kaggle submissions still report `No submissions found`, and competition files still only list `NOTE.md`.
+- Public GitHub state is current: local `HEAD`, local `origin/main`, and public `git ls-remote` all resolve to `4ccb504d7ac054c6517690b6a1e523e82d16d2fb` (`Add DoraHacks submission readiness`).
+- The July 1 DoraHacks submission-readiness target is now public and reflected in fresh local artifacts: `outputs/judge_bundle.json` has `artifact_freshness.status=fresh_public_head`, `fresh_for_public_demo=true`, bundle hash `77e60a509e66082b4ba301305a4b53cb71574561fbcb71bb442310bf37daaec2`, report hash `5b62fcbd3c854d9154256de6ebccb2f43565b0c0e177dc9a04ca0a10cbd07492`, listing kit hash `a816448c9bbe14a1b1ee77bc58a4774c8feece9f0435cf7fbbe8e6b48ec43e70`, and live-commerce manifest hash `a263b9c5fdb94b861a175ec73805bb93ac5eb0d18053df40aaee5f0468d53146`.
+- Focused validation still passes: `python3 -m unittest discover -s tests -p 'test_*.py'` -> `Ran 16 tests in 0.473s ... OK`.
+- No `CROO_*`, `TRUSTBRIEF_*`, `OPENAI_*`, `KAGGLE_*`, `DORAHACKS_*`, `WALLET_*`, or `CAP_*` environment variable names were present in shell output, so no live provider, wallet/payment, Agent Store, or DoraHacks action was attempted.
+- CROO docs continue to support the same high-upside proof path: Agent Store setup, paid service registration, requester funding, and the CAP order lifecycle from negotiation through payment/escrow, delivery hash, and settlement.
+- DoraHacks direct verification remains blocked by WAF/CAPTCHA (`HTTP 405` or timeout), but search-visible BUIDLs now cluster around CROO proof/trust/credibility. TrustBrief should differentiate through buyer pre-spend gating, source-ledger auditability, and concrete live paid-order proof rather than generic verification-agent claims.
+
+### Planner decision
+
+If CROO credentials, requester funding, and explicit payment authorization are available, the best executor target is one real Agent Store listing plus one paid-order proof chain. Without those credentials, the best unblocked executor target for July 2, 2026 is to create a judge-visible offline demo capture pack from the fresh public-head artifacts: exact commands, screenshot filenames, 5-minute recording sequence, source/hash block, DoraHacks form values, live-proof blanks, and a final manual login/video-upload checklist. Do not add broad product features, attempt wallet/payment actions, or submit to DoraHacks in that executor run.
+
+## 2026-07-02 Run - Demo Capture Pack
+
+### Chosen target
+
+Run the planner-recommended judge-visible offline demo capture pack. No CROO credentials, requester funding, DoraHacks credentials, wallet funding, or explicit payment authorization were present, so this executor stayed on generated recording/submission evidence instead of attempting Agent Store, wallet/payment, live CAP, or DoraHacks actions.
+
+### Exact changes
+
+- Added `trustbrief_agent/demo_capture_pack.py`, a compact generator that reads `outputs/dorahacks_demo_package.json` and writes `outputs/demo_capture_pack.md/json`.
+- The new pack extracts exact public-head regeneration commands, the five-minute voiceover, 7 screenshot filenames from the judge capture plan, Agent Store screenshot filenames, 10 DoraHacks form values, source/hash block, live-proof blanks, blocked live proof targets, and final manual login/video-upload gates.
+- Added focused tests proving the capture pack preserves ready-to-record status, regeneration commands, screenshot filenames, DoraHacks placeholders, live-proof blanks, blocked proof targets, and no-live-claim guardrails.
+- Updated `README.md`, `DEMO_SCRIPT.md`, and `HACKATHON_SUBMISSION.md` so the default judge flow generates and opens `outputs/demo_capture_pack.md`.
+- Tightened the generated DoraHacks package demo command to include `--listing-kit-output outputs/agent_store_listing_kit.json`.
+
+### Commands run
+
+```bash
+git status --short --branch
+git rev-parse HEAD
+GIT_TERMINAL_PROMPT=0 git ls-remote https://github.com/vandit98/croo-trustbrief-agent.git refs/heads/main
+/Users/vandit/.pyenv/shims/kaggle competitions list -s croo-ai-agent-hackathon-10-k-usd-prize-pool
+/Users/vandit/.pyenv/shims/kaggle competitions submissions croo-ai-agent-hackathon-10-k-usd-prize-pool
+/Users/vandit/.pyenv/shims/kaggle competitions files croo-ai-agent-hackathon-10-k-usd-prize-pool
+env | cut -d= -f1 | rg '^(CROO|TRUSTBRIEF|OPENAI|KAGGLE|DORAHACKS|WALLET|CAP)_'
+python3 -m py_compile trustbrief_agent/demo_capture_pack.py trustbrief_agent/submission_package.py tests/test_trustbrief.py
+python3 -m unittest discover -s tests -p 'test_*.py'
+python3 -m trustbrief_agent.evidence_bundle examples/sample_request.json --report-output outputs/demo_report.json --mock-output outputs/mock_cap_demo.json --requester-output outputs/requester_demo.json --buyer-output outputs/buyer_composability_demo.json --live-commerce-output outputs/live_commerce_evidence.json --listing-kit-output outputs/agent_store_listing_kit.json --public-repo-url https://github.com/vandit98/croo-trustbrief-agent --public-default-branch main --public-visibility public --public-head-commit 4ccb504d7ac054c6517690b6a1e523e82d16d2fb --public-head-url https://github.com/vandit98/croo-trustbrief-agent/commit/4ccb504d7ac054c6517690b6a1e523e82d16d2fb --public-verified-at 2026-07-02T09:05:32Z --public-verification-source "git ls-remote https://github.com/vandit98/croo-trustbrief-agent.git refs/heads/main" --output outputs/judge_bundle.json
+python3 -m trustbrief_agent.submission_package --bundle outputs/judge_bundle.json --output outputs/dorahacks_demo_package.md --json-output outputs/dorahacks_demo_package.json
+python3 -m trustbrief_agent.demo_capture_pack --package outputs/dorahacks_demo_package.json --output outputs/demo_capture_pack.md --json-output outputs/demo_capture_pack.json
+```
+
+### Results
+
+- Public `main` before editing was verified at `4ccb504d7ac054c6517690b6a1e523e82d16d2fb`, and local `HEAD` matched it.
+- Kaggle remains open with deadline `2026-07-12 16:00:00`, reward `10,000 Usd`, `teamCount=8`, and `userHasEntered=True`; submissions still report `No submissions found`; competition files still only list `NOTE.md`.
+- No matching `CROO_*`, `TRUSTBRIEF_*`, `OPENAI_*`, `KAGGLE_*`, `DORAHACKS_*`, `WALLET_*`, or `CAP_*` environment variable names were present in the credential check output, so no live provider, wallet/payment, Agent Store, or DoraHacks action was attempted.
+- `python3 -m py_compile trustbrief_agent/demo_capture_pack.py trustbrief_agent/submission_package.py tests/test_trustbrief.py` succeeded.
+- `python3 -m unittest discover -s tests -p 'test_*.py'` -> `Ran 18 tests in 1.030s ... OK`.
+- Pre-commit bundle/package/capture-pack smoke passed:
+  - `outputs/judge_bundle.json.artifact_freshness.status=tracked_files_dirty`, `fresh_for_public_demo=false`, and `validation.tests.passed=true`, as expected before commit.
+  - `outputs/dorahacks_demo_package.json.dorahacks_submission_readiness.status=regenerate_before_buidl_draft`, as expected before commit.
+  - `outputs/demo_capture_pack.json.ready_to_record=false`, as expected before commit because the bundle was generated with tracked files dirty.
+  - `outputs/demo_capture_pack.json` contains `5` regeneration commands, `7` recording shots, `10` DoraHacks form values, and `3` blank form fields for live-proof-only values.
+  - Pre-commit `proof.bundle_hash=d6d12f76dd8676501f50018c8a59cd6f8f556958ada803034e9a3bc42e83ab37` and `proof.report_hash=1f93ee796a32eecd4c0320f77ddb7c46fdbffe8a43b36206f9f3dab5fd370f80`.
+
+### Blockers
+
+- Live CROO proof remains blocked by missing dashboard/API credentials, provider SDK key, requester SDK key, provider service ID, requester AA-wallet funding, and explicit payment authorization.
+- DoraHacks filing and video upload remain blocked by manual login/human verification and user authorization.
+- The pre-commit generated bundle is intentionally not fresh for public demo until this commit is pushed and ignored local artifacts are regenerated against the new public head.
+
+### Next action
+
+Commit and push the demo capture pack to `main`, then regenerate `outputs/judge_bundle.json`, `outputs/dorahacks_demo_package.md/json`, `outputs/demo_capture_pack.md/json`, `outputs/agent_store_listing_kit.json`, and `outputs/live_commerce_evidence.json` with the new public head. If CROO credentials, requester funding, and explicit payment authorization become available, stop offline pack work and capture one real Agent Store listing plus one paid-order proof chain.
